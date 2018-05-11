@@ -1,10 +1,8 @@
 ---
 title: "R Notebook"
-output:
-  html_notebook: default
-  html_document: default
-  pdf_document: default
+output: html_notebook
 ---
+
 
 ## Loading and pre-processing data
 
@@ -16,11 +14,6 @@ setwd('E:/SageDocs/PredictingDriverGenes/LineageMisc/')
 
 Dat <- read.delim('MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
 Dat2 <- read.delim('MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
-
-AMP_mods <-  read.csv('TCX_AMPAD_Modules.csv')
-
-GeneNames <- Dat$ensembl_gene_id
-GeneNamesAD <- AMP_mods$GeneID
 
 Names <- colnames(Dat)
 
@@ -42,17 +35,19 @@ for (i in 1:l){
 }
 
 
+
+
 #Normalize all columns 
 source('MiscPreprocessing.R')
 
 DatNorm <- ColNorm(Dat)
-In <- which(GeneNames %in% GeneNamesAD)
-DatNorm2 <- DatNorm[In,]
+DatNorm2 <- DatNorm[Get.High.Var.Genes(DatNorm),]
 library(Rtsne)
 Temp <- Rtsne(t(DatNorm2))
 
 
 ```
+
 
 
 ## Visualizing the whole dataset using tSNE

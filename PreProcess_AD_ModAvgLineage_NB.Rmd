@@ -48,6 +48,9 @@ source('MiscPreprocessing.R')
 DatNorm <- ColNorm(Dat)
 In <- which(GeneNames %in% GeneNamesAD)
 DatNorm2 <- DatNorm[In,]
+
+DatNorm2 <- Get.Module.Averages(DatNorm2, GeneNames[In], AMP_mods)
+
 library(Rtsne)
 Temp <- Rtsne(t(DatNorm2))
 
@@ -119,26 +122,34 @@ plot_cell_trajectory(MonRun, color_by = "Labels")
 
 ```
 
-
-
-## Visualizing Monocle2 with different labels 
+## visualizing Monocle2 with outcome labels
 
 ```{r}
 
 Monocle.Plot(MonRun, Labels = Dat4$Tissue.Diagnosis, Discrete = T)
 
-
 ```
 
-## Viewing gene expression overlaid on the lineage 
+
+## Visualizing Monocle2 with ApoE labels 
 
 ```{r}
 
-gList <- GeneNames[In]
-g <- GeneNames[In[1]]
+Monocle.Plot(MonRun, Labels = Dat4$Tissue.APOE4, Discrete = T)
+
+
+```
+
+## Viewing module expression overlaid on the lineage 
+
+```{r}
+
+gList <- unique(AMP_mods$Module)
+g <- gList[4]
   
 Mon.Plot.Genes(MonRun, DatNorm4, gList, g)
 
 
 ```
+
 

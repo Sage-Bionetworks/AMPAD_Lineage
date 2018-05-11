@@ -1,0 +1,406 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={R Notebook},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+  \title{R Notebook}
+  \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+  \author{}
+  \preauthor{}\postauthor{}
+  \date{}
+  \predate{}\postdate{}
+
+
+\begin{document}
+\maketitle
+
+\subsection{Loading and pre-processing
+data}\label{loading-and-pre-processing-data}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Loading and pre-processing data}
+
+\KeywordTok{setwd}\NormalTok{(}\StringTok{'E:/SageDocs/PredictingDriverGenes/LineageMisc/'}\NormalTok{)}
+
+\NormalTok{Dat <-}\StringTok{ }\KeywordTok{read.delim}\NormalTok{(}\StringTok{'MAYO_CBE_TCX_logCPM.tsv'}\NormalTok{,}\DataTypeTok{stringsAsFactors =}\NormalTok{ F)}
+\NormalTok{Dat2 <-}\StringTok{ }\KeywordTok{read.delim}\NormalTok{(}\StringTok{'MAYO_CBE_TCX_Covariates.tsv'}\NormalTok{,}\DataTypeTok{stringsAsFactors =}\NormalTok{ F)}
+
+\NormalTok{AMP_mods <-}\StringTok{  }\KeywordTok{read.csv}\NormalTok{(}\StringTok{'TCX_AMPAD_Modules.csv'}\NormalTok{)}
+
+\NormalTok{GeneNames <-}\StringTok{ }\NormalTok{Dat}\OperatorTok{$}\NormalTok{ensembl_gene_id}
+\NormalTok{GeneNamesAD <-}\StringTok{ }\NormalTok{AMP_mods}\OperatorTok{$}\NormalTok{GeneID}
+
+\NormalTok{Names <-}\StringTok{ }\KeywordTok{colnames}\NormalTok{(Dat)}
+
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(Names))\{}
+  
+\NormalTok{  Names[i] <-}\StringTok{ }\KeywordTok{substring}\NormalTok{(Names[i],}\DecValTok{2}\NormalTok{)}
+  
+\NormalTok{\}}
+
+\KeywordTok{colnames}\NormalTok{(Dat) <-}\StringTok{ }\NormalTok{Names}
+\NormalTok{cNames <-}\StringTok{ }\NormalTok{Dat2}\OperatorTok{$}\NormalTok{SampleID}
+\NormalTok{l <-}\StringTok{ }\KeywordTok{length}\NormalTok{(Names)}
+
+\CommentTok{#deleting columns not in the covariate list }
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{l)\{}
+  \ControlFlowTok{if}\NormalTok{ (}\OperatorTok{!}\NormalTok{(Names[i] }\OperatorTok{%in%}\StringTok{ }\NormalTok{cNames))\{}
+\NormalTok{    Dat[,i] <-}\StringTok{ }\OtherTok{NULL}
+\NormalTok{  \}}
+\NormalTok{\}}
+
+
+\CommentTok{#Normalize all columns }
+\KeywordTok{source}\NormalTok{(}\StringTok{'MiscPreprocessing.R'}\NormalTok{)}
+
+\NormalTok{DatNorm <-}\StringTok{ }\KeywordTok{ColNorm}\NormalTok{(Dat)}
+\NormalTok{In <-}\StringTok{ }\KeywordTok{which}\NormalTok{(GeneNames }\OperatorTok{%in%}\StringTok{ }\NormalTok{GeneNamesAD)}
+\NormalTok{DatNorm2 <-}\StringTok{ }\NormalTok{DatNorm[In,]}
+\KeywordTok{library}\NormalTok{(Rtsne)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'Rtsne' was built under R version 3.3.3
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Temp <-}\StringTok{ }\KeywordTok{Rtsne}\NormalTok{(}\KeywordTok{t}\NormalTok{(DatNorm2))}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Visualizing the whole dataset using
+tSNE}\label{visualizing-the-whole-dataset-using-tsne}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#tSNE visualization for whole dataset}
+\KeywordTok{plot}\NormalTok{(Temp}\OperatorTok{$}\NormalTok{Y[,}\DecValTok{1}\NormalTok{],Temp}\OperatorTok{$}\NormalTok{Y[,}\DecValTok{2}\NormalTok{], }\DataTypeTok{col =} \KeywordTok{as.factor}\NormalTok{(Dat2}\OperatorTok{$}\NormalTok{Sex))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PreProcess_AD_ModuleLineage_NB_files/figure-latex/unnamed-chunk-2-1.pdf}
+
+\subsection{Visualizing the one brain region using
+tSNE}\label{visualizing-the-one-brain-region-using-tsne}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Keeping only TCX data }
+\NormalTok{In_BR <-}\StringTok{ }\KeywordTok{grep}\NormalTok{(}\StringTok{'TCX'}\NormalTok{,Dat2}\OperatorTok{$}\NormalTok{Tissue.Diagnosis)}
+\NormalTok{DatNorm3 <-}\StringTok{ }\NormalTok{DatNorm2[,In_BR]}
+\NormalTok{Dat3 <-}\StringTok{ }\NormalTok{Dat2[In_BR,]}
+\NormalTok{Temp <-}\StringTok{ }\KeywordTok{Rtsne}\NormalTok{(}\KeywordTok{t}\NormalTok{(DatNorm3))}
+\KeywordTok{plot}\NormalTok{(Temp}\OperatorTok{$}\NormalTok{Y[,}\DecValTok{1}\NormalTok{],Temp}\OperatorTok{$}\NormalTok{Y[,}\DecValTok{2}\NormalTok{], }\DataTypeTok{col =} \KeywordTok{as.factor}\NormalTok{(Dat3}\OperatorTok{$}\NormalTok{Sex))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PreProcess_AD_ModuleLineage_NB_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+\subsection{Visualizing one gender using
+tSNE}\label{visualizing-one-gender-using-tsne}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Keeping only female data }
+\NormalTok{In_S <-}\StringTok{ }\KeywordTok{grep}\NormalTok{(}\StringTok{'FEMALE'}\NormalTok{,Dat3}\OperatorTok{$}\NormalTok{Sex)}
+\NormalTok{DatNorm4 <-}\StringTok{ }\NormalTok{DatNorm3[,In_S]}
+\NormalTok{Dat4 <-}\StringTok{ }\NormalTok{Dat3[In_S,]}
+\NormalTok{Temp <-}\StringTok{ }\KeywordTok{Rtsne}\NormalTok{(}\KeywordTok{t}\NormalTok{(DatNorm4))}
+\KeywordTok{plot}\NormalTok{(Temp}\OperatorTok{$}\NormalTok{Y[,}\DecValTok{1}\NormalTok{],Temp}\OperatorTok{$}\NormalTok{Y[,}\DecValTok{2}\NormalTok{], }\DataTypeTok{col =} \KeywordTok{as.factor}\NormalTok{(Dat4}\OperatorTok{$}\NormalTok{Tissue.Diagnosis))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PreProcess_AD_ModuleLineage_NB_files/figure-latex/unnamed-chunk-4-1.pdf}
+
+\subsection{Performing lineage inference using
+Monocle2}\label{performing-lineage-inference-using-monocle2}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Performing lineage inference with Monocle2}
+\KeywordTok{source}\NormalTok{(}\StringTok{'LineageFunctions.R'}\NormalTok{)}
+\NormalTok{temp <-}\StringTok{ }\NormalTok{DatNorm4}
+\KeywordTok{rownames}\NormalTok{(temp) <-}\StringTok{ }\OtherTok{NULL}
+\KeywordTok{colnames}\NormalTok{(temp) <-}\StringTok{ }\OtherTok{NULL}
+\NormalTok{MonRun <-}\StringTok{ }\KeywordTok{RunMonocleTobit}\NormalTok{(temp, Dat4}\OperatorTok{$}\NormalTok{AgeAtDeath)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: Matrix
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'Matrix' was built under R version 3.3.3
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: Biobase
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: BiocGenerics
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: parallel
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'BiocGenerics'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:parallel':
+## 
+##     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+##     clusterExport, clusterMap, parApply, parCapply, parLapply,
+##     parLapplyLB, parRapply, parSapply, parSapplyLB
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:Matrix':
+## 
+##     which
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:stats':
+## 
+##     IQR, mad, xtabs
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:base':
+## 
+##     anyDuplicated, append, as.data.frame, cbind, colnames,
+##     do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+##     grepl, intersect, is.unsorted, lapply, lengths, Map, mapply,
+##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
+##     Position, rank, rbind, Reduce, rownames, sapply, setdiff,
+##     sort, table, tapply, union, unique, unsplit, which, which.max,
+##     which.min
+\end{verbatim}
+
+\begin{verbatim}
+## Welcome to Bioconductor
+## 
+##     Vignettes contain introductory material; view with
+##     'browseVignettes()'. To cite Bioconductor, see
+##     'citation("Biobase")', and for packages 'citation("pkgname")'.
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: ggplot2
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'ggplot2' was built under R version 3.3.3
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: VGAM
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'VGAM' was built under R version 3.3.3
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: stats4
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: splines
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: DDRTree
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'DDRTree' was built under R version 3.3.3
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: irlba
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'irlba' was built under R version 3.3.3
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in newCellDataSet(as.matrix(HSMM_expr_matrix), phenoData = pd,
+## featureData = fd, : Warning: featureData must contain a column verbatim
+## named 'gene_short_name' for certain functions
+
+## Warning in newCellDataSet(as.matrix(HSMM_expr_matrix), phenoData = pd,
+## featureData = fd, : Warning: featureData must contain a column verbatim
+## named 'gene_short_name' for certain functions
+
+## Warning in newCellDataSet(as.matrix(HSMM_expr_matrix), phenoData = pd,
+## featureData = fd, : Warning: featureData must contain a column verbatim
+## named 'gene_short_name' for certain functions
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'bindrcpp' was built under R version 3.3.3
+\end{verbatim}
+
+\subsection{Visualizing using Monocle's
+visualization}\label{visualizing-using-monocles-visualization}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{plot_cell_trajectory}\NormalTok{(MonRun, }\DataTypeTok{color_by =} \StringTok{"Labels"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PreProcess_AD_ModuleLineage_NB_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+\subsection{Visualizing Monocle2 with different
+labels}\label{visualizing-monocle2-with-different-labels}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{Monocle.Plot}\NormalTok{(MonRun, }\DataTypeTok{Labels =}\NormalTok{ Dat4}\OperatorTok{$}\NormalTok{Tissue.Diagnosis, }\DataTypeTok{Discrete =}\NormalTok{ T)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'reshape2' was built under R version 3.3.3
+\end{verbatim}
+
+\includegraphics{PreProcess_AD_ModuleLineage_NB_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+\subsection{Viewing gene expression overlaid on the
+lineage}\label{viewing-gene-expression-overlaid-on-the-lineage}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gList <-}\StringTok{ }\NormalTok{GeneNames[In]}
+\NormalTok{g <-}\StringTok{ }\NormalTok{GeneNames[In[}\DecValTok{1}\NormalTok{]]}
+  
+\KeywordTok{Mon.Plot.Genes}\NormalTok{(MonRun, DatNorm4, gList, g)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PreProcess_AD_ModuleLineage_NB_files/figure-latex/unnamed-chunk-8-1.pdf}
+
+
+\end{document}

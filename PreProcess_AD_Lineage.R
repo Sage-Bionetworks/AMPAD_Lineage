@@ -1,26 +1,7 @@
----
-title: "R Notebook"
-output:
-  html_notebook: default
-  html_document: default
-  pdf_document: default
----
-
-## Loading and pre-processing data
-
-```{r}
-
-#Loading and pre-processing data
-
 setwd('E:/SageDocs/PredictingDriverGenes/LineageMisc/')
 
 Dat <- read.delim('MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
 Dat2 <- read.delim('MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
-
-AMP_mods <-  read.csv('TCX_AMPAD_Modules.csv')
-
-GeneNames <- Dat$ensembl_gene_id
-GeneNamesAD <- AMP_mods$GeneID
 
 Names <- colnames(Dat)
 
@@ -42,33 +23,17 @@ for (i in 1:l){
 }
 
 
+
+
 #Normalize all columns 
 source('MiscPreprocessing.R')
 
 DatNorm <- ColNorm(Dat)
-In <- which(GeneNames %in% GeneNamesAD)
-DatNorm2 <- DatNorm[In,]
+DatNorm2 <- DatNorm[Get.High.Var.Genes(DatNorm),]
 library(Rtsne)
 Temp <- Rtsne(t(DatNorm2))
 
-
-```
-
-
-## Visualizing the whole dataset using tSNE
-
-```{r}
-
-#tSNE visualization for whole dataset
 plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat2$Sex))
-
-```
-
-
-## Visualizing the one brain region using tSNE
-
-
-```{r}
 
 #Keeping only TCX data 
 In_BR <- grep('TCX',Dat2$Tissue.Diagnosis)
@@ -77,15 +42,6 @@ Dat3 <- Dat2[In_BR,]
 Temp <- Rtsne(t(DatNorm3))
 plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat3$Sex))
 
-```
-
-
-## Visualizing one gender using tSNE
-
-
-```{r}
-
-
 #Keeping only female data 
 In_S <- grep('FEMALE',Dat3$Sex)
 DatNorm4 <- DatNorm3[,In_S]
@@ -93,52 +49,11 @@ Dat4 <- Dat3[In_S,]
 Temp <- Rtsne(t(DatNorm4))
 plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat4$Tissue.Diagnosis))
 
-```
-
-
-## Performing lineage inference using Monocle2
-
-
-```{r}
-
 #Performing lineage inference with Monocle2
 source('LineageFunctions.R')
-temp <- DatNorm4
+temp <- exp(DatNorm4)-1
 rownames(temp) <- NULL
 colnames(temp) <- NULL
-MonRun <- RunMonocleTobit(temp, Dat4$AgeAtDeath)
-
-
-```
-
-## Visualizing using Monocle's visualization 
-
-```{r}
-
+MonRun <- RunMonocleDefault(temp, Dat4$AgeAtDeath)
 plot_cell_trajectory(MonRun, color_by = "Labels")
-
-```
-
-
-
-## Visualizing Monocle2 with different labels 
-
-```{r}
-
-Monocle.Plot(MonRun, Labels = Dat4$Tissue.Diagnosis, Discrete = T)
-
-
-```
-
-## Viewing gene expression overlaid on the lineage 
-
-```{r}
-
-gList <- GeneNames[In]
-g <- GeneNames[In[1]]
-  
-Mon.Plot.Genes(MonRun, DatNorm4, gList, g)
-
-
-```
 

@@ -80,20 +80,6 @@ plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat3$Sex))
 ```
 
 
-## Visualizing one gender using tSNE
-
-
-```{r}
-
-
-#Keeping only female data 
-In_S <- grep('FEMALE',Dat3$Sex)
-DatNorm4 <- DatNorm3[,In_S]
-Dat4 <- Dat3[In_S,]
-Temp <- Rtsne(t(DatNorm4))
-plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat4$Tissue.Diagnosis))
-
-```
 
 
 ## Performing lineage inference using Monocle2
@@ -103,10 +89,10 @@ plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat4$Tissue.Diagnosis))
 
 #Performing lineage inference with Monocle2
 source('LineageFunctions.R')
-temp <- DatNorm4
+temp <- DatNorm3
 rownames(temp) <- NULL
 colnames(temp) <- NULL
-MonRun <- RunMonocleTobit(temp, Dat4$AgeAtDeath)
+MonRun <- RunMonocleTobit(temp, Dat3$AgeAtDeath)
 
 
 ```
@@ -125,7 +111,7 @@ plot_cell_trajectory(MonRun, color_by = "Labels")
 
 ```{r}
 
-Monocle.Plot(MonRun, Labels = Dat4$Tissue.Diagnosis, Discrete = T)
+Monocle.Plot(MonRun, Labels = Dat3$Tissue.Diagnosis.Sex, Discrete = T)
 
 
 ```
@@ -137,7 +123,7 @@ Monocle.Plot(MonRun, Labels = Dat4$Tissue.Diagnosis, Discrete = T)
 gList <- GeneNames[In]
 g <- GeneNames[In[1]]
   
-Mon.Plot.Genes(MonRun, DatNorm4, gList, g)
+Mon.Plot.Genes(MonRun, DatNorm3, gList, g)
 
 
 ```
