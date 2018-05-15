@@ -194,3 +194,141 @@ Mon.Plot.Genes <- function(MonRun, Dat, GeneNames, GeneID){
   return(g)
   
 }
+
+
+Run.Lineage.BR <- function(Dat4, DatNorm4, FileName, BR, Sex, l = NULL){
+  
+  temp <- DatNorm4
+  rownames(temp) <- NULL
+  colnames(temp) <- NULL
+  
+  
+  if (is.null(l)){
+    MonRun <- RunMonocleTobit(temp, Dat4$AgeAtDeath)
+    
+    g <- Monocle.Plot(MonRun, Labels = Dat4$Tissue.Diagnosis, Discrete = T)
+    t <- paste(FileName,BR,Sex,'Diag.png',sep = '')
+    ggsave(filename=t, plot=g)
+    
+    
+    g <- Monocle.Plot(MonRun, Labels = Dat4$Tissue.APOE4, Discrete = T)
+    t <- paste(FileName,BR,Sex,'ApoE.png',sep = '')
+    ggsave(filename=t, plot=g)
+    
+    
+    g <- Monocle.Plot(MonRun, Labels = Dat4$AgeAtDeath, Discrete = F)
+    t <- paste(FileName,BR,Sex,'Age.png',sep = '')
+    ggsave(filename=t, plot=g)
+    
+  } else { 
+    
+    MonRun <- RunMonocleTobit(temp, Dat4[[l[3]]])
+    
+    g <- Monocle.Plot(MonRun, Labels = Dat4[[l[1]]], Discrete = T)
+    t <- paste(FileName,BR,Sex,'Diag.png',sep = '')
+    ggsave(filename=t, plot=g)
+    
+    
+    g <- Monocle.Plot(MonRun, Labels = Dat4[[l[2]]], Discrete = T)
+    t <- paste(FileName,BR,Sex,'ApoE.png',sep = '')
+    ggsave(filename=t, plot=g)
+    
+    
+    g <- Monocle.Plot(MonRun, Labels = Dat4[[l[3]]], Discrete = F)
+    t <- paste(FileName,BR,Sex,'Age.png',sep = '')
+    ggsave(filename=t, plot=g)
+    
+    
+    }
+  
+  
+  
+}
+
+
+Subset.Data.Sex.BR <- function(DatNorm2, Dat2, BR,Sex,Tdiag = T){
+  
+  if (Tdiag == T){
+    In_BR <- grep(BR,Dat2$Tissue.Diagnosis)
+    DatNorm3 <- DatNorm2[,In_BR]
+    Dat3 <- Dat2[In_BR,]
+  } else {
+    DatNorm3 <- DatNorm2
+    Dat3 <- Dat2
+  }
+
+  In_S <- which(Dat3$Sex == Sex)
+  print(In_S)
+  
+  DatNorm4 <- DatNorm3[,In_S]
+  Dat4 <- Dat3[In_S,]
+  
+  l <- list()
+  l$Dat4 <- Dat4
+  l$DatNorm4 <- DatNorm4
+  
+  return(l)
+}
+
+
+Normalize.Data <- function(Dat, Dat2, AMP_mods, DelChars = T){
+  
+  GeneNames <- Dat$ensembl_gene_id
+  GeneNamesAD <- AMP_mods$GeneID
+  
+  Names <- colnames(Dat)
+  
+  if (DelChars ==T){
+    for (i in 1:length(Names)){
+      
+      Names[i] <- substring(Names[i],2)
+      
+    }
+    
+  }
+
+  
+  colnames(Dat) <- Names
+  cNames <- Dat2$SampleID
+  l <- length(Names)
+  
+  #deleting columns not in the covariate list
+  temp <- rep(T,l)
+  for (i in 1:l){
+    if (!(Names[i] %in% cNames)){
+      temp[i] <- F
+    }
+  }
+  
+  In <- which(temp)
+  #print(temp)
+  Dat <- Dat[,In]
+  
+  #deleting extra rows in covariate list
+  Names <- Names[In]
+  l <- length(cNames)
+  temp <- rep(T,l)
+  for (i in 1:l){
+    if (!(cNames[i] %in% Names)){
+      temp[i] <- F
+    }
+  }
+  In <- which(temp)
+  Dat2 <- Dat2[In,]
+
+  
+  #Normalize all columns 
+  source('MiscPreprocessing.R')
+  
+  DatNorm <- ColNorm(Dat)
+  In <- which(GeneNames %in% GeneNamesAD)
+  DatNorm2 <- DatNorm[In,]
+  
+  l <- list()
+  l$Dat2 <- Dat2
+  l$DatNorm <- DatNorm 
+  l$DatNorm2 <- DatNorm2
+  
+  return(l)
+  
+}
