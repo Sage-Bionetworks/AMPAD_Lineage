@@ -118,7 +118,7 @@ RunMonocleDefault <- function(Dat, Labels, max_components = 2, meth = 'DDRTree')
   }
 
 
-RunMonocleTobit <- function(Dat, Labels, max_components=2, meth = 'DDRTree'){ 
+RunMonocleTobit <- function(Dat, Labels, max_components=2, meth = 'DDRTree',C_by = NULL){ 
   
   library(monocle)
   
@@ -128,6 +128,7 @@ RunMonocleTobit <- function(Dat, Labels, max_components=2, meth = 'DDRTree'){
   Genes <- c(1:dim(Dat)[1])
   Genes <- data.frame(Genes)
   Labels <- data.frame(Labels)
+  rownames(Labels) <- seq(1,dim(Dat)[2])
   
   pd <- new("AnnotatedDataFrame", data = Labels)
   fd <- new("AnnotatedDataFrame", data = Genes)
@@ -141,7 +142,13 @@ RunMonocleTobit <- function(Dat, Labels, max_components=2, meth = 'DDRTree'){
   
   HSMM <- reduceDimension(HSMM, max_components=max_components, reduction_method = meth)
   HSMM <- orderCells(HSMM)
-  plot_cell_trajectory(HSMM, color_by="Labels")
+  if(is.null(C_by)){
+    plot_cell_trajectory(HSMM, color_by="Labels")
+  }
+  else{
+    plot_cell_trajectory(HSMM, color_by=C_by)
+  }
+
   
   return(HSMM)
   
@@ -332,3 +339,4 @@ Normalize.Data <- function(Dat, Dat2, AMP_mods, DelChars = T){
   return(l)
   
 }
+

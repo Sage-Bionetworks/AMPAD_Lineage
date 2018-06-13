@@ -1,0 +1,177 @@
+---
+title: "R Notebook"
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document: default
+---
+
+## Loading and pre-processing data
+
+```{r}
+
+#Loading and pre-processing data
+
+setwd('E:/SageDocs/PredictingDriverGenes/LineageMisc/')
+source('MiscPreprocessing.R')
+
+
+Dat <- read.delim('MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
+Dat2 <- read.delim('MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
+
+
+```
+
+
+```{r}
+Cov <- read.csv('mayo_igap_snps.csv',stringsAsFactors = F)
+Cov[,2:22] <- round(Cov[,2:22])
+```
+
+
+
+```{r}
+#AMP_mods <-  read.csv('TCX_AMPAD_Modules.csv')
+AMP_mods <-  read.csv('TCX_DE.csv')
+In <- which(AMP_mods$logPV >= 1)
+AMP_mods <- AMP_mods[In,]
+
+
+#Normalize all columns 
+
+GeneNames <- Dat$ensembl_gene_id
+GeneNamesAD <- AMP_mods$GeneID
+
+Names <- colnames(Dat)
+
+for (i in 1:length(Names)){
+  
+  Names[i] <- substring(Names[i],2)
+  
+}
+
+
+colnames(Dat) <- Names
+cNames <- Dat2$SampleID
+l <- length(Names)
+
+#deleting columns not in the covariate list
+temp <- rep(T,l)
+for (i in 1:l){
+  if (!(Names[i] %in% cNames)){
+    temp[i] <- F
+  }
+}
+
+In <- which(temp)
+#print(temp)
+Dat <- Dat[,In]
+
+#deleting extra rows in covariate list
+Names <- Names[In]
+l <- length(cNames)
+temp <- rep(T,l)
+for (i in 1:l){
+  if (!(cNames[i] %in% Names)){
+    temp[i] <- F
+  }
+}
+In <- which(temp)
+Dat2 <- Dat2[In,]
+  
+  
+DatNorm <- ColNorm(Dat)
+In <- which(GeneNames %in% GeneNamesAD)
+DatNorm2 <- DatNorm[In,]
+
+
+library(Rtsne)
+Temp <- Rtsne(t(DatNorm2))
+
+```
+
+
+
+## Visualizing the whole dataset using tSNE
+
+```{r}
+
+#tSNE visualization for whole dataset
+plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat2$Sex))
+
+```
+
+
+## Visualizing the one brain region using tSNE
+
+
+```{r}
+
+#Keeping only TCX data 
+In_BR <- grep('TCX',Dat2$Tissue.Diagnosis)
+DatNorm3 <- DatNorm2[,In_BR]
+Dat3 <- Dat2[In_BR,]
+
+Temp <- Rtsne(t(DatNorm3))
+plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat3$Sex))
+
+```
+
+
+## Visualizing one gender using tSNE
+
+
+```{r}
+
+
+#Keeping only female data 
+Sex <- 'FEMALE'
+In_S <- which(Dat3$Sex == Sex)
+DatNorm4 <- DatNorm3[,In_S]
+Dat4 <- Dat3[In_S,]
+
+In_cov <- which(Cov$ID %in% Dat4$Donor_ID)
+Cov <- Cov[In_cov,]
+In_cov <- c()
+for(i in 1:length(Cov$ID)){
+  temp <- which(Dat4$Donor_ID==Cov$ID[i])
+  In_cov <- c(In_cov,temp[1])
+}
+Cov <- Cov[In_cov,]
+
+for (i in 23:26){
+  Cov[,i] <- (Cov[,i] - min(Cov[,i]))/(max(Cov[,i])-min(Cov[,i]))
+}
+
+Temp <- Rtsne(t(DatNorm4))
+plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat4$Tissue.Diagnosis))
+
+```
+
+
+## Performing lineage inference using Monocle2
+
+
+```{r}
+
+#Performing lineage inference with Monocle2
+source('LineageFunctions.R')
+temp <- DatNorm4
+temp2 <- cbind(Dat4,Cov)
+rownames(temp) <- NULL
+colnames(temp) <- NULL
+MonRun <- RunMonocleTobit(temp, temp2, C_by = 'endoScore')
+
+
+```
+
+## Visualizing using Monocle's visualization 
+
+```{r}
+
+plot_cell_trajectory(MonRun, color_by = "neuroScore")
+
+```
+
+
+
