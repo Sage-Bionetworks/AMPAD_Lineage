@@ -340,3 +340,35 @@ Normalize.Data <- function(Dat, Dat2, AMP_mods, DelChars = T){
   
 }
 
+Sliding.Window.Average.Cat <- function(PStime, X, wSize, t){
+  
+  l <- length(PStime)
+  nB <- l-wSize + 1 
+  pAvg <- rep(0,nB)
+  fAvg <- rep(0,nB)
+  
+  In_P <- sort(PStime,index.return = T)
+  In_P <- In_P$ix 
+  PStime <- PStime[In_P]
+  X <- X[In_P]
+  #print(X)
+
+  
+  for (i in 1:nB){
+    t2 <- i+wSize-1
+
+    pAvg[i] <- mean(PStime[i:t2])
+    fAvg[i] <- sum(X[i:t2])/wSize
+    #print(fAvg[i])
+    #print(sum(X[i:i+wSize-1]==t))
+  }
+  
+  l2 <- list()
+  l2$pAvg <- pAvg
+  l2$fAvg <- fAvg
+  l2$PStime <- PStime
+  l2$X <- X
+  
+  return(l2)
+}
+

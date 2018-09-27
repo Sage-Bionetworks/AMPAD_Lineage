@@ -1,7 +1,7 @@
-FileName <- './LineageFiles/Mssm'
+FileName <- './DE_lineages/Mayo'
 
-Dat <- read.delim('MSSM_FP_STG_PHG_IFG_logCPM.tsv',stringsAsFactors = F)
-Dat2 <- read.delim('MSSM_FP_STG_PHG_IFG_Covariates.tsv',stringsAsFactors = F)
+Dat <- read.delim('MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
+Dat2 <- read.delim('MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
 
 source('LineageFunctions.R')
 source('MiscPreprocessing.R')
@@ -17,11 +17,12 @@ Sex <- unique(Dat2$Sex)
 for (i in 1:length(BR)){
   
   t <- paste(BR[i],'.csv',sep='')
-  AMP_mods <- read.csv(t)
+  #AMP_mods <- read.csv(t)
+  AMP_mods <- read.csv('TCX_DE.csv')
   
   for (j in 1:length(Sex)){
     
-    l <- Normalize.Data(Dat, Dat2, AMP_mods, DelChars = F)
+    l <- Normalize.Data(Dat, Dat2, AMP_mods, DelChars = T)
     Dat2 <- l$Dat2
     DatNorm  <- l$DatNorm  
     DatNorm2 <- l$DatNorm2 
@@ -32,7 +33,7 @@ for (i in 1:length(BR)){
     
     l2 <- c('Tissue.Diagnosis','Tissue.APOE4','AOD')
     
-    Run.Lineage.BR(Dat4, DatNorm4, FileName, BR[i],Sex[j],l2)
+    Run.Lineage.BR(Dat4, DatNorm4, FileName, BR[i],Sex[j])
     
   }
   

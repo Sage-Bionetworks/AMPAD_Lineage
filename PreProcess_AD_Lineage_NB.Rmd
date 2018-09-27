@@ -66,7 +66,7 @@ plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat2$Sex))
 ```{r}
 
 #Keeping only TCX data 
-In_BR <- grep('TCX',Dat2$Tissue.Diagnosis)
+In_BR <- grep('CBE',Dat2$Tissue.Diagnosis)
 DatNorm3 <- DatNorm2[,In_BR]
 Dat3 <- Dat2[In_BR,]
 Temp <- Rtsne(t(DatNorm3))
