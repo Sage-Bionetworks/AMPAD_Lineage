@@ -118,20 +118,25 @@ RunMonocleDefault <- function(Dat, Labels, max_components = 2, meth = 'DDRTree')
   }
 
 
-RunMonocleTobit <- function(Dat, Labels, max_components=2, meth = 'DDRTree',C_by = NULL){ 
+RunMonocleTobit <- function(Dat, Labels, max_components=2, meth = 'DDRTree',C_by = NULL, 
+                            gene_short_name = NULL){ 
   
   library(monocle)
   
   HSMM_expr_matrix <- Dat
   names(HSMM_expr_matrix)<-seq(1,dim(Dat)[2])
   
-  Genes <- c(1:dim(Dat)[1])
-  Genes <- data.frame(Genes)
+  if(is.null(gene_short_name)){
+    gene_short_name <- c(1:dim(Dat)[1])
+  }
+  
+  
+  gene_short_name <- data.frame(gene_short_name)
   Labels <- data.frame(Labels)
   rownames(Labels) <- seq(1,dim(Dat)[2])
   
   pd <- new("AnnotatedDataFrame", data = Labels)
-  fd <- new("AnnotatedDataFrame", data = Genes)
+  fd <- new("AnnotatedDataFrame", data = gene_short_name)
   
   
   
@@ -372,3 +377,32 @@ Sliding.Window.Average.Cat <- function(PStime, X, wSize, t){
   return(l2)
 }
 
+
+Make.Gene.Symb <- function(GeneENSG){
+  
+  source('convertEnsemblToHgnc.R')
+  GeneConv <- convertEnsemblToHgnc(GeneENSG)
+  Symb <- as.character(c(1:length(GeneENSG)))
+  
+  for (i in 1:length(GeneENSG)){
+    In <- which(GeneConv$ensembl_gene_id == GeneENSG[i])
+    if (length(In)>0){
+      Symb[i] <- GeneConv$external_gene_name[In]
+    }
+  }
+  
+  return(Symb)
+  
+}
+
+
+ScaleMatrix <- function(Dat){
+  
+  for(i in 1:dim(Dat)[1]){
+    Dat[i,] <- Dat[i,] - min(Dat[i,])
+    Dat[i,] <- Dat[i,]/max(Dat[i,])
+  }
+  
+  return(Dat)
+  
+}

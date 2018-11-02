@@ -17,30 +17,22 @@ output:
 source('MiscPreprocessing.R')
 
 
-Dat <- read.delim('Data/MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
-Dat2 <- read.delim('Data/MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
 
-#Dat <- read.delim('ROSMAP_DLPFC_logCPM.tsv',stringsAsFactors = F)
-#Dat2 <- read.delim('ROSMAP_DLPFC_Covariates.tsv',stringsAsFactors = F)
-#Dat2 <- read.csv('ROSMAP_DLPFC_Covariates3.csv',stringsAsFactors = F)
+Dat <- read.delim('Data/ROSMAP_DLPFC_logCPM.tsv',stringsAsFactors = F)
+Dat2 <- read.delim('Data/ROSMAP_DLPFC_Covariates.tsv',stringsAsFactors = F)
+Dat2 <- read.csv('Data/ROSMAP_DLPFC_Covariates3.csv',stringsAsFactors = F)
 
 
 ```
 
 
-```{r}
-Cov <- read.csv('Data/mayo_igap_snps.csv',stringsAsFactors = F)
-Cov[,2:22] <- round(Cov[,2:22])
-```
-
-
 
 ```{r}
-#AMP_mods <-  read.csv('Data/TCX_AMPAD_Modules.csv')
-AMP_mods <-  read.csv('Data/TCX_DE.csv')
-#AMP_mods <-  read.csv('DLPFC_DE.csv')
-In <- which(AMP_mods$logPV >= 1)
-AMP_mods <- AMP_mods[In,]
+#AMP_mods <-  read.csv('TCX_AMPAD_Modules.csv')
+#AMP_mods <-  read.csv('TCX_DE.csv')
+AMP_mods <-  read.csv('Data/DLPFC_DE.csv')
+#In <- which(AMP_mods$LogPV.DLPFC >= 1)
+#AMP_mods <- AMP_mods[In,]
 
 
 
@@ -89,13 +81,13 @@ Dat2 <- Dat2[In,]
   
   
 DatNorm <- ColNorm(Dat)
-In_genes <- which(GeneNames %in% GeneNamesAD)
-#In_genes <- Get.High.Var.Genes(Dat)
+#In_genes <- which(GeneNames %in% GeneNamesAD)
+In_genes <- Get.High.Var.Genes(Dat)
 DatNorm2 <- DatNorm[In_genes,]
-GeneNamesAD <- GeneNames[In_genes]
+#GeneNamesAD <- GeneNames[In_genes]
 
-#DatNorm2 <- DatNorm2[,Dat2$Batch<7]
-#Dat2 <- Dat2[Dat2$Batch<7,] 
+DatNorm2 <- DatNorm2[,Dat2$Batch<7]
+Dat2 <- Dat2[Dat2$Batch<7,] 
 
 library(Rtsne)
 Temp <- Rtsne(t(DatNorm2))
@@ -120,12 +112,12 @@ plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat2$Sex))
 ```{r}
 
 #Keeping only TCX data 
-In_BR <- grep('TCX',Dat2$Tissue.Diagnosis)
+#In_BR <- grep('TCX',Dat2$Tissue.Diagnosis)
 #In_BR <- grep('DLPFC',Dat2$Tissue.Diagnosis)
-DatNorm3 <- DatNorm2[,In_BR]
-Dat3 <- Dat2[In_BR,]
-#DatNorm3 <- DatNorm2
-#Dat3 <- Dat2
+#DatNorm3 <- DatNorm2[,In_BR]
+#Dat3 <- Dat2[In_BR,]
+DatNorm3 <- DatNorm2
+Dat3 <- Dat2
 
 Temp <- Rtsne(t(DatNorm3))
 plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat3$Sex))
@@ -159,8 +151,8 @@ for (i in 23:26){
 }
 
 Temp <- Rtsne(t(DatNorm4))
-plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat4$Tissue.Diagnosis))
-#plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat4$Diagnosis.Sex))
+#plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat4$Tissue.Diagnosis))
+plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat4$Diagnosis.Sex))
 
 ```
 
@@ -173,18 +165,16 @@ plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat4$Tissue.Diagnosis))
 #Performing lineage inference with Monocle2
 source('LineageFunctions.R')
 temp <- DatNorm4
-temp2 <- cbind(Dat4,Cov)
-#temp2 <- Dat4
-#temp2$APOE4 <- as.character(temp2$APOE4)
-#temp2$braaksc <- as.character(temp2$braaksc)
-#temp2$ceradsc <- as.character(temp2$ceradsc)
-#temp2$cogdx.1 <- as.character(temp2$cogdx.1)
-
-gene_short_name <- Make.Gene.Symb(GeneNamesAD)
+#temp2 <- cbind(Dat4,Cov)
+temp2 <- Dat4
+temp2$APOE4 <- as.character(temp2$APOE4)
+temp2$braaksc <- as.character(temp2$braaksc)
+temp2$ceradsc <- as.character(temp2$ceradsc)
+temp2$cogdx.1 <- as.character(temp2$cogdx.1)
 
 rownames(temp) <- NULL
 colnames(temp) <- NULL
-MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
+MonRun <- RunMonocleTobit(temp, temp2, C_by = 'endoScore')
 
 
 ```
@@ -193,8 +183,8 @@ MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gen
 
 ```{r}
 
-#plot_cell_trajectory(MonRun, color_by = "Diagnosis")
-plot_cell_trajectory(MonRun, color_by = "Tissue.Diagnosis")
+#plot_cell_trajectory(MonRun, color_by = "Tissue.APOE4")
+plot_cell_trajectory(MonRun, color_by = "Diagnosis")
 
 ```
 
