@@ -189,7 +189,8 @@ for(i in 1:length(PS)){
 plot(PS+.05,log10(MinEnr),type='l',col='Blue')
 lines(PS+.05,log10(MeanEnr),type='l',col='Red')
 
-
+p <- ggplot(MonRun@phenoData@data, aes(x=Diagnosis, y=Pseudotime)) + geom_violin()
+p + stat_summary(fun.y=mean, geom="point", shape=23, size=2)
 
 
 

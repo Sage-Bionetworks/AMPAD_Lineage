@@ -176,8 +176,15 @@ for(i in 1:length(PS)){
 }
 
 
+plot(PS+.05,log10(MinEnr),type='l',col='Blue')
+lines(PS+.05,log10(MeanEnr),type='l',col='Red')
 
 
+p <- ggplot(MonRun@phenoData@data, aes(x=Tissue.sourceDiagnosis, y=Pseudotime,fill=Tissue.sourceDiagnosis)) + geom_boxplot()
+p + stat_summary(fun.y=mean, geom="point", shape=23, size=2)
+
+p <- ggplot(MonRun@phenoData@data, aes(x=Tissue.APOE4, y=Pseudotime,fill=Tissue.APOE4)) + geom_boxplot()
+p + stat_summary(fun.y=mean, geom="point", shape=23, size=2)
 
 #DE of resistant branch 
 BEAM_res <- BEAM(MonRun, branch_point = 2, cores = 4)
