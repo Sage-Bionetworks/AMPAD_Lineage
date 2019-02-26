@@ -106,7 +106,9 @@ MonRun2 = MonRun
 ScaledDat = ScaleMatrix(MonRun2@assayData$exprs)
 #MonRun2@assayData$exprs <- ScaledDat
 MonRun$State2 <- MonRun$State
+#MonRun$State2[MonRun$State == 6] <- 4
 MonRun$State2[MonRun$State == 6] <- 4
+MonRun$State2[MonRun$State == 7] <- 6
 diff_test_res <- differentialGeneTest(MonRun,fullModelFormulaStr = "~State2")
 d <- dim(diff_test_res)
 
@@ -125,8 +127,8 @@ for(i in 1:d[1]){
     
   }
   
-  diff_test_res$maxType[i] <- which.max(t)
-  diff_test_res$minType[i] <- which.min(t)
+  diff_test_res$maxType[i] <- l[which.max(t)]
+  diff_test_res$minType[i] <- l[which.min(t)]
   
 }
 
@@ -134,8 +136,33 @@ In_sort <- sort(diff_test_res$qval, method = 'radix', index.return = T,
                 na.last = T)
 
 diff_test_res2 <- diff_test_res[In_sort$ix,]
-saveRDS(diff_test_res2,'TCX_F_pv1_Mon_State_DE.rds')
+saveRDS(diff_test_res2,'./Data/TCX_F_pv1_Mon_State_DE.rds')
 
+
+library(enrichR)
+#Get different states 
+for(i in 1:max(diff_test_res2$maxType)){
+  In_temp <- which((diff_test_res2$maxType == i)&(diff_test_res2$pval <1e-5))
+  dbs <- c("GO_Molecular_Function_2018","GO_Biological_Process_2018")
+  tmp_txt <- paste(c('Data/TCX_F_pv1_Mon_DE_state_',as.character(i),'.csv'),
+                   sep='',collapse = '')
+  enriched <- enrichr(as.vector(diff_test_res2[In_temp,]$gene_short_name),dbs)
+  tmp_txt2 <- paste(c('Data/TCX_F_pv1_Mon_DE_MF_state_',as.character(i),'.csv'),
+                    sep='',collapse = '')
+  tmp_txt3 <- paste(c('Data/TCX_F_pv1_Mon_DE_BP_state_',as.character(i),'.csv'),
+                    sep='',collapse = '')
+  
+  enriched$GO_Molecular_Function_2018 <- enriched$GO_Molecular_Function_2018[
+    order(enriched$GO_Molecular_Function_2018$P.value),]
+  
+  enriched$GO_Biological_Process_2018 <- enriched$GO_Biological_Process_2018[
+    order(enriched$GO_Biological_Process_2018$P.value),]
+  
+  write.csv(diff_test_res2[In_temp,],tmp_txt)
+  write.csv(enriched$GO_Molecular_Function_2018,tmp_txt2)
+  write.csv(enriched$GO_Biological_Process_2018,tmp_txt3)
+  
+}
 
 #Calculate Pseudotime correlation 
 CorrMat <- rep(0,length(gene_short_name))

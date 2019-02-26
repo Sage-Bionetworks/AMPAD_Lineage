@@ -1,7 +1,6 @@
 source('MiscPreprocessing.R')
 
 
-
 Dat <- read.delim('Data/MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
 Dat2 <- read.delim('Data/MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
 
@@ -104,44 +103,53 @@ MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gen
 plot_cell_trajectory(MonRun, color_by = "Tissue.Diagnosis")
 
 
-#Create gene clusters based on state expression patterns 
+#Create differential expression based on state 
 MonRun2 = MonRun
 ScaledDat = ScaleMatrix(MonRun2@assayData$exprs)
 #MonRun2@assayData$exprs <- ScaledDat
 MonRun$State2 <- MonRun$State
+#MonRun$State2[MonRun$State == 6] <- 4
 MonRun$State2[MonRun$State == 6] <- 4
 MonRun$State2[MonRun$State == 7] <- 6
 
-UnqStates <- unique(MonRun$State2)
+l2 <- list()
+l2$gene_names <- gene_short_name
+l2$p_2 <- rep(0,length(gene_short_name))
+l2$p_3 <- rep(0,length(gene_short_name))
+l2$p_4 <- rep(0,length(gene_short_name))
+l2$p_5 <- rep(0,length(gene_short_name))
+l2$p_6 <- rep(0,length(gene_short_name))
 
-cNames <- paste(UnqStates,'_mean',sep = '')
-
-library(Matrix)
-
-M <- matrix(rep(0,length(GeneNamesAD)*length(UnqStates)),nrow = length(GeneNamesAD),ncol = length(UnqStates))
-colnames(M) <- cNames
-rownames(M) <- gene_short_name
+l2$d_2 <- rep(0,length(gene_short_name))
+l2$d_3 <- rep(0,length(gene_short_name))
+l2$d_4 <- rep(0,length(gene_short_name))
+l2$d_5 <- rep(0,length(gene_short_name))
+l2$d_6 <- rep(0,length(gene_short_name))
 
 
-#get branch means 
-for (i in 1:length(UnqStates)){
+for (i in 1:length(gene_short_name)){
+  l <- list()
+  l$x <- as.vector(t(temp[i,]))
+  l$s <- as.character(MonRun$State2)
   
-  for (j in 1:length(GeneNamesAD)){
-    
-    M[j,i] <- mean(ScaledDat[j,which(MonRun$State2==UnqStates[i])])
-    
-  }
+  df <- as.data.frame(l)
+  res.aov <- aov(x ~ s, data = df)
+  tk <- TukeyHSD(res.aov)
+  
+  l2$p_2[i] <- tk$s[1,4]
+  l2$p_3[i] <- tk$s[2,4]
+  l2$p_4[i] <- tk$s[3,4]
+  l2$p_5[i] <- tk$s[4,4]
+  l2$p_6[i] <- tk$s[5,4]
+  
+  l2$d_2[i] <- tk$s[1,1]
+  l2$d_3[i] <- tk$s[2,1]
+  l2$d_4[i] <- tk$s[3,1]
+  l2$d_5[i] <- tk$s[4,1]
+  l2$d_6[i] <- tk$s[5,1]
   
 }
 
-M2 <- ScaleMatrix(M)
-M3 <- 1*(M2>0.5)
 
-library(pheatmap)
-
-pheatmap(M2, show_colnames = F)
-write.csv(M2df,'./Data/TCX_F_pv1_bclust_norm.csv')
-
-
-
-
+df2 <- as.data.frame(l2)
+saveRDS(df2,'Data/TCX_F_pv1_Anova_DE.rds')

@@ -10,10 +10,10 @@ output: html_notebook
 
 #Loading and pre-processing data
 
-setwd('E:/SageDocs/PredictingDriverGenes/LineageMisc/')
+#setwd('E:/SageDocs/PredictingDriverGenes/LineageMisc/')
 
-Dat <- read.delim('MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
-Dat2 <- read.delim('MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
+Dat <- read.delim('Data/MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
+Dat2 <- read.delim('Data/MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
 
 Names <- colnames(Dat)
 
@@ -55,7 +55,7 @@ Temp <- Rtsne(t(DatNorm2))
 ```{r}
 
 #tSNE visualization for whole dataset
-plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat2$Sex))
+plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat2$Sex),pch=16)
 
 ```
 
@@ -66,13 +66,26 @@ plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat2$Sex))
 ```{r}
 
 #Keeping only TCX data 
-In_BR <- grep('CBE',Dat2$Tissue.Diagnosis)
+In_BR <- grep('TCX',Dat2$Tissue.Diagnosis)
 DatNorm3 <- DatNorm2[,In_BR]
 Dat3 <- Dat2[In_BR,]
-Temp <- Rtsne(t(DatNorm3))
-plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat3$Sex))
+#DatNorm3[DatNorm3<0] <- 0
+Temp <- Rtsne(t((1+DatNorm3)))
+
+
 
 ```
+
+## tSNE
+
+```{r}
+plot(Temp$Y[,1],Temp$Y[,2], col = as.factor(Dat3$Sex), pch=16, xlab = 'tSNE-1', ylab = 'tSNE-2',
+     main = 'TCX')
+
+legend(8,9,c('F','M'), col = c('black','red'),lty = 3, lwd =8)
+```
+
+
 
 
 ## Visualizing one gender using tSNE

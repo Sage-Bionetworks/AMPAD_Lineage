@@ -140,114 +140,49 @@ MonRun$State2[MonRun$State == 5] <- 4
 MonRun$State2[MonRun$State == 8] <- 5
 MonRun$State2[MonRun$State == 9] <- 6
 
-diff_test_res <- differentialGeneTest(MonRun,fullModelFormulaStr = "~State2")
-d <- dim(diff_test_res)
-
-diff_test_res$maxType <- rep(0,d[1])
-diff_test_res$minType <- rep(0,d[1])
-
-l <- as.array(unique(MonRun$State2))
-
-for(i in 1:d[1]){
-  
-  t <- rep(0,length(l))
-  
-  for(j in 1:length(l)){
-    
-    t[j] <- mean(MonRun2@assayData$exprs[i,MonRun$State2==l[j]])
-    
-  }
-  
-  diff_test_res$maxType[i] <- l[which.max(t)]
-  diff_test_res$minType[i] <- l[which.min(t)]
-  
-}
-
-In_sort <- sort(diff_test_res$qval, method = 'radix', index.return = T, 
-                na.last = T)
-
-diff_test_res2 <- diff_test_res[In_sort$ix,]
-saveRDS(diff_test_res2,'Data/DLPFC_F_pv1_Mon_State_DE.rds')
 
 
-library(enrichR)
-#Get different states 
-for(i in 1:max(diff_test_res2$maxType)){
-  In_temp <- which((diff_test_res2$maxType == i)&(diff_test_res2$pval <1e-5))
-  dbs <- c("GO_Molecular_Function_2018","GO_Biological_Process_2018")
-  tmp_txt <- paste(c('Data/DLPFC_F_pv1_Mon_DE_state_',as.character(i),'.csv'),
-                   sep='',collapse = '')
-  enriched <- enrichr(as.vector(diff_test_res2[In_temp,]$gene_short_name),dbs)
-  tmp_txt2 <- paste(c('Data/DLPFC_F_pv1_Mon_DE_MF_state_',as.character(i),'.csv'),
-                   sep='',collapse = '')
-  tmp_txt3 <- paste(c('Data/DLPFC_F_pv1_Mon_DE_BP_state_',as.character(i),'.csv'),
-                    sep='',collapse = '')
+l2 <- list()
+l2$gene_names <- gene_short_name
+l2$p_2 <- rep(0,length(gene_short_name))
+l2$p_3 <- rep(0,length(gene_short_name))
+l2$p_4 <- rep(0,length(gene_short_name))
+l2$p_5 <- rep(0,length(gene_short_name))
+l2$p_6 <- rep(0,length(gene_short_name))
+
+l2$d_2 <- rep(0,length(gene_short_name))
+l2$d_3 <- rep(0,length(gene_short_name))
+l2$d_4 <- rep(0,length(gene_short_name))
+l2$d_5 <- rep(0,length(gene_short_name))
+l2$d_6 <- rep(0,length(gene_short_name))
+
+
+for (i in 1:length(gene_short_name)){
+  l <- list()
+  l$x <- as.vector(t(temp[i,]))
+  l$s <- as.character(MonRun$State2)
   
-  enriched$GO_Molecular_Function_2018 <- enriched$GO_Molecular_Function_2018[
-    order(enriched$GO_Molecular_Function_2018$P.value),]
+  df <- as.data.frame(l)
+  res.aov <- aov(x ~ s, data = df)
+  tk <- TukeyHSD(res.aov)
   
-  enriched$GO_Biological_Process_2018 <- enriched$GO_Biological_Process_2018[
-    order(enriched$GO_Biological_Process_2018$P.value),]
+  l2$p_2[i] <- tk$s[1,4]
+  l2$p_3[i] <- tk$s[2,4]
+  l2$p_4[i] <- tk$s[3,4]
+  l2$p_5[i] <- tk$s[4,4]
+  l2$p_6[i] <- tk$s[5,4]
   
-  #write.csv(diff_test_res2[In_temp,],tmp_txt)
-  write.csv(enriched$GO_Molecular_Function_2018,tmp_txt2)
-  write.csv(enriched$GO_Biological_Process_2018,tmp_txt3)
+  l2$d_2[i] <- tk$s[1,1]
+  l2$d_3[i] <- tk$s[2,1]
+  l2$d_4[i] <- tk$s[3,1]
+  l2$d_5[i] <- tk$s[4,1]
+  l2$d_6[i] <- tk$s[5,1]
   
 }
 
 
-#Calculate Pseudotime correlation 
-CorrMat <- rep(0,length(gene_short_name))
-
-for( i in 1:length(gene_short_name)){
-  
-  CorrMat[i] <- abs(cor(x = MonRun$Pseudotime, y = as.vector(ScaledDat[i,])
-                        , method = 'pearson'))[1]
-  
-}
-
-CorrDF <- as.data.frame(CorrMat)
-CorrDF$gene_short_name <- gene_short_name
-saveRDS(CorrDF,'Data/DLPFC_F_pv1_PS_corr.rds')
-
-
-#Pseudotime enrichment 
-IGAP_list <- read.csv('../MiscFiles/Jansen_gene_summary.csv')
-PS <- seq(0,.8,.1)
-
-MinEnr <- rep(0,length(PS))
-MeanEnr <- rep(0,length(PS))
-
-for(i in 1:length(PS)){
-  
-  CutOff <- PS[i]
-  PS_genes <- CorrDF$gene_short_name[which(CorrMat>CutOff & CorrMat<CutOff+.2)]
-  #PS_genes <- CorrDF$gene_short_name[which(CorrMat<CutOff+.1)]
-  
-  '%ni%' <- Negate('%in%')
-  
-  In_igap1 <- which(IGAP_list$Names %in% PS_genes)
-  In_igap2 <- which(IGAP_list$Names %ni% PS_genes)
-  
-  MinEnr[i] <- wilcox.test(IGAP_list$Mean[In_igap1],IGAP_list$Mean[In_igap2],
-                           alternative = "two.sided")$p.value
-  MeanEnr[i] <- wilcox.test(log10(IGAP_list$Min[In_igap1]),log10(IGAP_list$Min[In_igap2]),
-                            alternative = "two.sided")$p.value
-  
-  
-}
-
-#plot(PS+.05,log10(MinEnr),type='l',col='Blue')
-#lines(PS+.05,log10(MeanEnr),type='l',col='Red')
-plot(PS+.1,log10(MeanEnr),type='l',col='Red')
-
-p <- ggplot(MonRun@phenoData@data, aes(x=Diagnosis, y=Pseudotime)) + geom_violin()
-p + stat_summary(fun.y=mean, geom="point", shape=23, size=2)
+df2 <- as.data.frame(l2)
+saveRDS(df2,'Data/DLPFC_F_pv1_Anova_DE.rds')
 
 
 
-#DE of resistant branch 
-BEAM_res <- BEAM(MonRun, branch_point = 2, cores = 4)
-In_sort <- sort(BEAM_res$qval, method = 'radix', index.return = T, na.last = T)
-BEAM_res <- BEAM_res[In_sort$ix,]
-saveRDS(diff_test_res2,'Data/TCX_F_pv1_Mon_Branch2_DE.rds')

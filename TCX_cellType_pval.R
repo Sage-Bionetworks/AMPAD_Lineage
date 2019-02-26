@@ -103,45 +103,26 @@ MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gen
 
 plot_cell_trajectory(MonRun, color_by = "Tissue.Diagnosis")
 
+#Get p-values for cell type specific marker expression
+load('./Data/mouseMarkerGenes.rda')
+In_ct <- which(gene_short_name %in% toupper(mouseMarkerGenes$Cortex$Pyramidal))
+Dat_ct <- Rescale.Rows(temp[In_ct,])
+summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$coefficients[,4][2]
+summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$r.squared
 
-#Create gene clusters based on state expression patterns 
-MonRun2 = MonRun
-ScaledDat = ScaleMatrix(MonRun2@assayData$exprs)
-#MonRun2@assayData$exprs <- ScaledDat
-MonRun$State2 <- MonRun$State
-MonRun$State2[MonRun$State == 6] <- 4
-MonRun$State2[MonRun$State == 7] <- 6
+In_ct <- which(gene_short_name %in% toupper(mouseMarkerGenes$Cortex$Microglia))
+Dat_ct <- Rescale.Rows(temp[In_ct,])
+summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$coefficients[,4][2]
+summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$r.squared
 
-UnqStates <- unique(MonRun$State2)
+In_ct <- which(gene_short_name %in% toupper(mouseMarkerGenes$Cortex$Oligo))
+Dat_ct <- Rescale.Rows(temp[In_ct,])
+summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$coefficients[,4][2]
+summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$r.squared
 
-cNames <- paste(UnqStates,'_mean',sep = '')
-
-library(Matrix)
-
-M <- matrix(rep(0,length(GeneNamesAD)*length(UnqStates)),nrow = length(GeneNamesAD),ncol = length(UnqStates))
-colnames(M) <- cNames
-rownames(M) <- gene_short_name
-
-
-#get branch means 
-for (i in 1:length(UnqStates)){
-  
-  for (j in 1:length(GeneNamesAD)){
-    
-    M[j,i] <- mean(ScaledDat[j,which(MonRun$State2==UnqStates[i])])
-    
-  }
-  
-}
-
-M2 <- ScaleMatrix(M)
-M3 <- 1*(M2>0.5)
-
-library(pheatmap)
-
-pheatmap(M2, show_colnames = F)
-write.csv(M2df,'./Data/TCX_F_pv1_bclust_norm.csv')
-
-
+In_ct <- which(gene_short_name %in% toupper(mouseMarkerGenes$Cortex$Astrocyte))
+Dat_ct <- Rescale.Rows(temp[In_ct,])
+summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$coefficients[,4][2]
+summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$r.squared
 
 
