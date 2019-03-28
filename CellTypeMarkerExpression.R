@@ -1,15 +1,15 @@
 source('MiscPreprocessing.R')
 
 
+#Loading data 
 Dat <- read.delim('Data/MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
 Dat2 <- read.delim('Data/MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
 
 Cov <- read.csv('Data/mayo_igap_snps.csv',stringsAsFactors = F)
 Cov[,2:22] <- round(Cov[,2:22])
 
-#AMP_mods <-  read.csv('Data/TCX_AMPAD_Modules.csv')
+#Sub-setting genes
 AMP_mods <-  read.csv('Data/TCX_DE.csv')
-#AMP_mods <-  read.csv('DLPFC_DE.csv')
 In <- which(AMP_mods$logPV >= 1)
 AMP_mods <- AMP_mods[In,]
 
@@ -17,7 +17,6 @@ AMP_mods <- AMP_mods[In,]
 
 
 #Normalize all columns 
-
 GeneNames <- Dat$ensembl_gene_id
 GeneNamesAD <- AMP_mods$GeneID
 
@@ -43,7 +42,6 @@ for (i in 1:l){
 }
 
 In <- which(temp)
-#print(temp)
 Dat <- Dat[,In]
 
 #deleting extra rows in covariate list
@@ -61,16 +59,16 @@ Dat2 <- Dat2[In,]
 
 DatNorm <- ColNorm(Dat)
 In_genes <- which(GeneNames %in% GeneNamesAD)
-#In_genes <- Get.High.Var.Genes(Dat)
 DatNorm2 <- DatNorm[In_genes,]
 GeneNamesAD <- GeneNames[In_genes]
 
 
+#Getting samples from a particular brain region 
 In_BR <- grep('TCX',Dat2$Tissue.Diagnosis)
-#In_BR <- grep('DLPFC',Dat2$Tissue.Diagnosis)
 DatNorm3 <- DatNorm2[,In_BR]
 Dat3 <- Dat2[In_BR,]
 
+#Getting only female samples
 Sex <- 'FEMALE'
 In_S <- which(Dat3$Sex == Sex)
 DatNorm4 <- DatNorm3[,In_S]
@@ -93,10 +91,13 @@ source('LineageFunctions.R')
 temp <- DatNorm4
 temp2 <- cbind(Dat4,Cov)
 
+#Getting gene symbols from ENSG
 gene_short_name <- Make.Gene.Symb(GeneNamesAD)
 
 rownames(temp) <- NULL
 colnames(temp) <- NULL
+
+#Running monocle and getting monocle object back
 MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
 
 
@@ -142,15 +143,18 @@ M_o <- colMeans(ScDat2[In_o,])
 Srtd <- sort(MonRun@phenoData@data$Pseudotime,index.return = T)
 Srtd <- Srtd$ix
 
+dev.off()
+
 #plotting 
+jpeg('./PaperFigs/TCX_CellTypes_new.jpg',width = 600, height = 350)
 plot(MonRun@phenoData@data$Pseudotime[Srtd], M_a[Srtd], type = 'l', lwd = 3, col = 'Red', 
-     xlab = 'Pseudotime', ylab = 'Mean Norm. Expression', ylim = c(0,1), main = 'TCX' )
+     xlab = 'Pseudotime', ylab = 'Mean Norm. Expression', ylim = c(0,1),cex.lab=1.3)
 lines(MonRun@phenoData@data$Pseudotime[Srtd], M_n[Srtd], lwd = 3, col = 'Blue')
 lines(MonRun@phenoData@data$Pseudotime[Srtd], M_m[Srtd], lwd = 3, col = 'Green')
 lines(MonRun@phenoData@data$Pseudotime[Srtd], M_o[Srtd], lwd = 3, col = 'Orange')
-legend(0, 0.75, legend=c("Astrocytes", "Neurons","Microglia","Oligodendrocytes"),
-       col=c("Red", "Blue","Green","Orange"), lty=1, cex=0.8)
-
+legend(0, 0.8, legend=c("Astrocytes", "Neurons","Microglia","Oligodendrocytes"),
+       col=c("Red", "Blue","Green","Orange"), lty=1, cex=1.2, pt.cex = 1)
+dev.off()
 
 
 

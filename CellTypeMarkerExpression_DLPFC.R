@@ -1,12 +1,12 @@
 source('MiscPreprocessing.R')
 
 
+
+#Read data
 Dat <- read.delim('Data/ROSMAP_DLPFC_logCPM.tsv',stringsAsFactors = F)
-#Dat2 <- read.delim('Data/ROSMAP_DLPFC_Covariates.tsv',stringsAsFactors = F)
 Dat2 <- read.csv('Data/ROSMAP_DLPFC_Covariates3.csv',stringsAsFactors = F)
 
-#AMP_mods <-  read.csv('TCX_AMPAD_Modules.csv')
-#AMP_mods <-  read.csv('TCX_DE.csv')
+#Sub-setting genes
 AMP_mods <-  read.csv('Data/DLPFC_DE.csv')
 In <- which(AMP_mods$LogPV.DLPFC >= 1)
 AMP_mods <- AMP_mods[In,]
@@ -41,7 +41,6 @@ for (i in 1:l){
 }
 
 In <- which(temp)
-#print(temp)
 Dat <- Dat[,In]
 
 #deleting extra rows in covariate list
@@ -59,17 +58,17 @@ Dat2 <- Dat2[In,]
 
 DatNorm <- ColNorm(Dat)
 In_genes <- which(GeneNames %in% GeneNamesAD)
-#In_genes <- Get.High.Var.Genes(Dat)
+
 DatNorm2 <- DatNorm[In_genes,]
 GeneNamesAD <- GeneNames[In_genes]
 
+#Removing bad batches
 DatNorm2 <- DatNorm2[,Dat2$Batch<7]
 Dat2 <- Dat2[Dat2$Batch<7,] 
 
-
-
 DatNorm3 <- DatNorm2
 Dat3 <- Dat2
+
 
 #Keeping only female data 
 Sex <- 'FEMALE'
@@ -91,10 +90,9 @@ for (i in 23:26){
 }
 
 
-
+#Running monocle
 source('LineageFunctions.R')
 temp <- DatNorm4
-#temp2 <- cbind(Dat4,Cov)
 temp2 <- Dat4
 temp2$APOE4 <- as.character(temp2$APOE4)
 temp2$braaksc <- as.character(temp2$braaksc)
@@ -105,6 +103,7 @@ gene_short_name <- Make.Gene.Symb(GeneNamesAD)
 
 rownames(temp) <- NULL
 colnames(temp) <- NULL
+
 MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
 
 plot_cell_trajectory(MonRun, color_by = "Diagnosis")
@@ -150,10 +149,12 @@ Srtd <- sort(MonRun@phenoData@data$Pseudotime,index.return = T)
 Srtd <- Srtd$ix
 
 #plotting 
+jpeg('./PaperFigs/DLPFC_CellTypes_new.jpg',width = 600, height = 350)
 plot(MonRun@phenoData@data$Pseudotime[Srtd], M_a[Srtd], type = 'l', lwd = 3, col = 'Red', 
-     xlab = 'Pseudotime', ylab = 'Mean Norm. Expression', ylim = c(0,1), main = 'DLPFC' )
+     xlab = 'Pseudotime', ylab = 'Mean Norm. Expression', ylim = c(0,1),cex.lab=1.3)
 lines(MonRun@phenoData@data$Pseudotime[Srtd], M_n[Srtd], lwd = 3, col = 'Blue')
 lines(MonRun@phenoData@data$Pseudotime[Srtd], M_m[Srtd], lwd = 3, col = 'Green')
 lines(MonRun@phenoData@data$Pseudotime[Srtd], M_o[Srtd], lwd = 3, col = 'Orange')
-legend(0, 0.75, legend=c("Astrocytes", "Neurons","Microglia","Oligodendrocytes"),
-       col=c("Red", "Blue","Green","Orange"), lty=1, cex=0.8)
+legend(0, 0.85, legend=c("Astrocytes", "Neurons","Microglia","Oligodendrocytes"),
+       col=c("Red", "Blue","Green","Orange"), lty=1, cex=1.2, pt.cex = 1)
+dev.off()

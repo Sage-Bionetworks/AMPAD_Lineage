@@ -298,4 +298,3 @@ print(t.test(log10(IGAP_list$Min[In_igap1]),log10(IGAP_list$Min[In_igap2])))
 
 
 ```
-

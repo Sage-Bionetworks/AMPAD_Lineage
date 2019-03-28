@@ -1,4 +1,5 @@
-PlotMonocleContinuous <- function(pts, lines, G_name, clr = NULL, cp = NULL){
+PlotMonocleContinuous <- function(pts, lines, G_name, clr = NULL, cp = NULL,
+                                  sz1=12,sz2=14){
   library("tidyverse")
   library("igraph")
   
@@ -28,13 +29,17 @@ PlotMonocleContinuous <- function(pts, lines, G_name, clr = NULL, cp = NULL){
       geom_point(data = pts, aes(x = V1, y = V2, color = clr)) +
       geom_segment(data = lines_edges, aes(x = x, y = y, xend = xend, yend = yend),size = 1) + 
       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-            panel.background = element_blank(), axis.line = element_line(colour = "black"))
+            panel.background = element_blank(), axis.line = element_line(colour = "black"),
+            axis.text=element_text(size=sz1), axis.title=element_text(size=sz2,face="bold"),
+            legend.text=element_text(size=15))
   } else{
     ggplot() +
       geom_point(data = pts, aes(x = V1, y = V2, color = clr)) +
       geom_segment(data = lines_edges, aes(x = x, y = y, xend = xend, yend = yend),size = 1) + 
       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-            panel.background = element_blank(), axis.line = element_line(colour = "black"))  + 
+            panel.background = element_blank(), axis.line = element_line(colour = "black"),
+            axis.text=element_text(size=sz1), axis.title=element_text(size=sz2,face="bold"),
+            legend.text=element_text(size=15))  + 
       scale_fill_gradient(low = cp[1], high = cp[2])
   }
   
@@ -43,7 +48,8 @@ PlotMonocleContinuous <- function(pts, lines, G_name, clr = NULL, cp = NULL){
 
 
 
-PlotMonocleDiscrete <- function(pts, lines, G_name, clr = NULL, cp = NULL){
+PlotMonocleDiscrete <- function(pts, lines, G_name, clr = NULL, cp = NULL,
+                                sz1=12, sz2=14){
   library("tidyverse")
   library("igraph")
   
@@ -73,13 +79,17 @@ PlotMonocleDiscrete <- function(pts, lines, G_name, clr = NULL, cp = NULL){
       geom_point(data = pts, aes(x = V1, y = V2, color = clr)) +
       geom_segment(data = lines_edges, aes(x = x, y = y, xend = xend, yend = yend),size = 1) + 
       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-            panel.background = element_blank(), axis.line = element_line(colour = "black"))
+            panel.background = element_blank(), axis.line = element_line(colour = "black"),
+            axis.text=element_text(size=sz1), axis.title=element_text(size=sz2,face="bold"),
+            legend.text=element_text(size=15))
   } else{
     ggplot() +
       geom_point(data = pts, aes(x = V1, y = V2, color = clr)) +
       geom_segment(data = lines_edges, aes(x = x, y = y, xend = xend, yend = yend),size = 1) + 
       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-            panel.background = element_blank(), axis.line = element_line(colour = "black"))  + 
+            panel.background = element_blank(), axis.line = element_line(colour = "black"),
+            axis.text=element_text(size=sz1), axis.title=element_text(size=sz2,face="bold"),
+            legend.text=element_text(size=15))  + 
       scale_color_brewer(palette=cp)
   }
   
