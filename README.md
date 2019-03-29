@@ -26,3 +26,7 @@ CellTypeMarkerExpression_DLPFC.R
 TCX_plot_final.R
 
 DLPFC_plot_final.R
+
+## Code to generate biclustering plot
+
+TCX_BranchPhenotype.R
