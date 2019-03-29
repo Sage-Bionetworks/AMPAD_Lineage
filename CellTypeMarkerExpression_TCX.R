@@ -1,21 +1,22 @@
 source('MiscPreprocessing.R')
 
 
+#Loading data 
+Dat <- read.delim('Data/MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
+Dat2 <- read.delim('Data/MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
 
-#Read data
-Dat <- read.delim('Data/ROSMAP_DLPFC_logCPM.tsv',stringsAsFactors = F)
-Dat2 <- read.csv('Data/ROSMAP_DLPFC_Covariates3.csv',stringsAsFactors = F)
+Cov <- read.csv('Data/mayo_igap_snps.csv',stringsAsFactors = F)
+Cov[,2:22] <- round(Cov[,2:22])
 
 #Sub-setting genes
-AMP_mods <-  read.csv('Data/DLPFC_DE.csv')
-In <- which(AMP_mods$LogPV.DLPFC >= 1)
+AMP_mods <-  read.csv('Data/TCX_DE.csv')
+In <- which(AMP_mods$logPV >= 1)
 AMP_mods <- AMP_mods[In,]
 
 
 
 
 #Normalize all columns 
-
 GeneNames <- Dat$ensembl_gene_id
 GeneNamesAD <- AMP_mods$GeneID
 
@@ -58,19 +59,16 @@ Dat2 <- Dat2[In,]
 
 DatNorm <- ColNorm(Dat)
 In_genes <- which(GeneNames %in% GeneNamesAD)
-
 DatNorm2 <- DatNorm[In_genes,]
 GeneNamesAD <- GeneNames[In_genes]
 
-#Removing bad batches
-DatNorm2 <- DatNorm2[,Dat2$Batch<7]
-Dat2 <- Dat2[Dat2$Batch<7,] 
 
-DatNorm3 <- DatNorm2
-Dat3 <- Dat2
+#Getting samples from a particular brain region 
+In_BR <- grep('TCX',Dat2$Tissue.Diagnosis)
+DatNorm3 <- DatNorm2[,In_BR]
+Dat3 <- Dat2[In_BR,]
 
-
-#Keeping only female data 
+#Getting only female samples
 Sex <- 'FEMALE'
 In_S <- which(Dat3$Sex == Sex)
 DatNorm4 <- DatNorm3[,In_S]
@@ -89,24 +87,21 @@ for (i in 23:26){
   Cov[,i] <- (Cov[,i] - min(Cov[,i]))/(max(Cov[,i])-min(Cov[,i]))
 }
 
-
-#Running monocle
 source('LineageFunctions.R')
 temp <- DatNorm4
-temp2 <- Dat4
-temp2$APOE4 <- as.character(temp2$APOE4)
-temp2$braaksc <- as.character(temp2$braaksc)
-temp2$ceradsc <- as.character(temp2$ceradsc)
-temp2$cogdx.1 <- as.character(temp2$cogdx.1)
+temp2 <- cbind(Dat4,Cov)
 
+#Getting gene symbols from ENSG
 gene_short_name <- Make.Gene.Symb(GeneNamesAD)
 
 rownames(temp) <- NULL
 colnames(temp) <- NULL
 
+#Running monocle and getting monocle object back
 MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
 
-plot_cell_trajectory(MonRun, color_by = "Diagnosis")
+
+plot_cell_trajectory(MonRun, color_by = "Tissue.Diagnosis")
 
 ##Scale and smooth data 
 #scaling data
@@ -148,13 +143,15 @@ M_o <- colMeans(ScDat2[In_o,])
 Srtd <- sort(MonRun@phenoData@data$Pseudotime,index.return = T)
 Srtd <- Srtd$ix
 
+dev.off()
+
 #plotting 
 plot(MonRun@phenoData@data$Pseudotime[Srtd], M_a[Srtd], type = 'l', lwd = 3, col = 'Red', 
      xlab = 'Pseudotime', ylab = 'Mean Norm. Expression', ylim = c(0,1),cex.lab=1.3)
 lines(MonRun@phenoData@data$Pseudotime[Srtd], M_n[Srtd], lwd = 3, col = 'Blue')
 lines(MonRun@phenoData@data$Pseudotime[Srtd], M_m[Srtd], lwd = 3, col = 'Green')
 lines(MonRun@phenoData@data$Pseudotime[Srtd], M_o[Srtd], lwd = 3, col = 'Orange')
-legend(0, 0.85, legend=c("Astrocytes", "Neurons","Microglia","Oligodendrocytes"),
+legend(0, 0.8, legend=c("Astrocytes", "Neurons","Microglia","Oligodendrocytes"),
        col=c("Red", "Blue","Green","Orange"), lty=1, cex=1.2, pt.cex = 1)
 
 
@@ -178,3 +175,12 @@ In_ct <- which(gene_short_name %in% toupper(mouseMarkerGenes$Cortex$Astrocyte))
 Dat_ct <- Rescale.Rows(temp[In_ct,])
 summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$coefficients[,4][2]
 summary(lm(colMeans(Dat_ct) ~ MonRun$Pseudotime))$r.squared
+
+
+
+
+
+
+
+
+
