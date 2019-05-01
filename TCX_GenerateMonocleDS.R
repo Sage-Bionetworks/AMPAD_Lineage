@@ -1,11 +1,28 @@
 source('MiscPreprocessing.R')
 
 #Loading data 
-Dat <- read.delim('Data/MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
-Dat2 <- read.delim('Data/MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
+#synapse id of dat file: syn8466816
+
+synapser::synLogin()
+
+tcxCPMObj <- synapser::synGet('syn8466816')
+Dat <- read.delim(tcxCPMObj$path,stringsAsFactors = F)
+
+#synapse id of dat2 file: syn8466814
+tcxCovObj <- synapser::synGet('syn8466814')
+Dat2 <- read.delim(tcxCovObj$path,stringsAsFactors = F)
 
 #subsetting genes based on differential expression
-AMP_mods <-  read.csv('Data/TCX_DE.csv')
+#synapse id of DE file: syn8468023?
+de_file <- synapser::synGet('syn8468023')
+de_file2 <- synapser::synGet('syn18475579')
+
+de1 <- data.table::fread(de_file$path,data.table=F)
+de2 <- data.table::fread(de_file2$path,data.table=F)
+de3 <- dplyr::filter(de1,Model=='Diagnosis',Comparison=='AD-CONTROL',Tissue.ref=='TCX')
+#AMP_mods <-  read.csv('Data/TCX_DE.csv')
+#AMP_mods <- data.frame(GeneID=de3$ensembl_gene_id,logPV= - log(de3$adj.P.Val)/log(10), stringsAsFactors=F)
+AMP_mods <- de2[,-1]
 In <- which(AMP_mods$logPV >= 1)
 AMP_mods <- AMP_mods[In,]
 
@@ -84,7 +101,8 @@ for (i in 23:26){
 
 source('LineageFunctions.R')
 temp <- DatNorm4
-temp2 <- cbind(Dat4,Cov)
+#temp2 <- cbind(Dat4,Cov)
+temp2 <- Dat4
 
 #convert to gene symbol
 gene_short_name <- Make.Gene.Symb(GeneNamesAD)

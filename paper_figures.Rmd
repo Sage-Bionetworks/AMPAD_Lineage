@@ -1,0 +1,104 @@
+---
+title: "All Paper Figures"
+output: html_notebook
+---
+
+Create boxplot and summary statistics of AD vs pseudo-time association in TCX and DLPFC.  First pull relevant data and do join.
+
+```{r}
+synapser::synLogin()
+tcxLineageTimes <- synapser::synTableQuery("select * from syn17023721")$asDataFrame()
+dlpfcLineageTimes <- synapser::synTableQuery("select * from syn17023795")$asDataFrame()
+tcxCovObj <- synapser::synGet("syn8466814")
+tcxCov <- data.table::fread(tcxCovObj$path,data.table=F)
+dlpfcCovObj <- synapser::synGet("syn11024258")
+dlpfcCov <- data.table::fread(dlpfcCovObj$path,data.table=F)
+tcxLineageTimes <- tcxLineageTimes[,-c(1:3)]
+dlpfcLineageTimes <- dlpfcLineageTimes[,-c(1:3)]
+dlpfc <- dplyr::left_join(dlpfcLineageTimes,dlpfcCov,by='SampleID')
+tcx <- dplyr::left_join(tcxLineageTimes,tcxCov,by='SampleID')
+```
+
+Next run a logistic regression
+
+```{r}
+tcxAD <- rep(NA,nrow(tcx))
+tcxAD[tcx$Tissue.Diagnosis == 'TCX.AD'] <- 1
+tcxAD[tcx$Tissue.Diagnosis == 'TCX.CONTROL'] <- 0
+tcxDf <- data.frame(diagnosis=tcxAD,
+                    pseudotime=tcx$Pseudotime,
+                    stringsAsFactors = FALSE)
+tcxDf$pseudotime <- scale(tcxDf$pseudotime,center=F)
+summary(glm(diagnosis ~ pseudotime,tcxDf,family='binomial'))
+
+dlpfcAD <- rep(NA,nrow(dlpfc))
+dlpfcAD[dlpfc$Diagnosis == 'AD'] <- 1
+dlpfcAD[dlpfc$Diagnosis == 'CONTROL'] <- 0
+dlpfcDf <- data.frame(diagnosis = dlpfcAD,
+                      pseudotime=dlpfc$Pseudotime,
+                      stringsAsFactors = FALSE)
+dlpfcDf$pseudotime <- scale(dlpfcDf$pseudotime,center=F)
+summary(glm(diagnosis ~ pseudotime,dlpfcDf,family='binomial'))
+
+```
+
+Next make a ggplot boxplot and save to figures folder.  First combine into a single df
+
+```{r}
+tcxDf$BrainRegion <- 'TCX'
+dlpfcDf$BrainRegion <- 'DLPFC'
+combinedDf <- rbind(tcxDf,dlpfcDf)
+combinedDf <- combinedDf[!is.na(combinedDf$diagnosis),]
+combinedDf$diagnosis[combinedDf$diagnosis==1] <- 'LOAD'
+combinedDf$diagnosis[combinedDf$diagnosis==0] <- 'Control'
+combinedDf$diagnosis <- factor(combinedDf$diagnosis,levels=c('Control','LOAD'))
+combinedDf$BrainRegion <- as.factor(combinedDf$BrainRegion)
+
+```
+
+Next make ggplot
+
+```{r}
+g <- ggplot2::ggplot(combinedDf,ggplot2::aes(x=BrainRegion,
+                                             y=pseudotime,
+                                             color=diagnosis))
+g <- g + ggplot2::geom_boxplot()
+g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
+g
+ggplot2::ggsave('newFigures/adCaseControl.png')
+```
+
+Next do neuropathology associations.  First pull ROSMAP covariate file.
+
+```{r}
+rosmapObj <- synapser::synGet('syn3191087')
+rosmap <- data.table::fread(rosmapObj$path,data.table=F)
+
+rosmapIdObj <- synapser::synGet('syn3382527')
+rosmapId <- data.table::fread(rosmapIdObj$path,data.table=F)
+rosmapId <- dplyr::select(rosmapId,projid,rnaseq_id)
+
+rosmapRNAid<-dplyr::left_join(rosmapId,rosmap)
+dlpfcComplete<-dplyr::left_join(dlpfcLineageTimes,rosmapRNAid,by=c('SampleID'='rnaseq_id'))
+dlpfcComplete$Pseudotime <- scale(dlpfcComplete$Pseudotime,center=F)
+
+dlpfcComplete <- dplyr::select(dlpfcComplete,Pseudotime,braaksc,ceradsc,cogdx)
+dlpfcComplete$braaksc <- factor(dlpfcComplete$braaksc,levels = c(0:6))
+dlpfcComplete$ceradsc <- factor(dlpfcComplete$ceradsc,levels = c(1:4))
+dlpfcComplete$cogdxNew <- rep(NA,nrow(dlpfcComplete))
+dlpfcComplete$cogdxNew[dlpfcComplete$cogdx==1] <- 'NCI'
+dlpfcComplete$cogdxNew[dlpfcComplete$cogdx==2] <- 'MCI'
+dlpfcComplete$cogdxNew[dlpfcComplete$cogdx==4] <- 'LOAD'
+dlpfcComplete$cogdxNew <- factor(dlpfcComplete$cogdxNew,levels = c('NCI','MCI','LOAD'))
+
+braakfit <- MASS::polr(braaksc ~ Pseudotime,dlpfcComplete)
+ceradfit <- MASS::polr(ceradsc ~ Pseudotime,dlpfcComplete)
+cogdxfit <- MASS::polr(cogdxNew ~ Pseudotime,dlpfcComplete)
+
+cat('braak p-value: ',pt(abs(summary(braakfit)$coef[1,3]),braakfit$df.residual,lower.tail=F)*2,'\n')
+cat('cerad p-value: ',pt(abs(summary(ceradfit)$coef[1,3]),ceradfit$df.residual,lower.tail=F)*2,'\n')
+cat('cogdx p-value: ',pt(abs(summary(cogdxfit)$coef[1,3]),cogdxfit$df.residual,lower.tail=F)*2,'\n')
+
+
+```
+
