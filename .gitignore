@@ -5,3 +5,12 @@
 .DS_Store
 paper_figures.nb.html
 newFigures
+Kunkle_etal_Stage1_results.txt
+Kunkle_etal_Stage2_results.txt
+kunkle.vcf
+kunkle.final.ann.vcf
+kunkle_stage1_results_gene_20kb.txt
+kunkletest.tsv
+kunkletest.vcf
+mouseMarkerGenes.zip
+.gitignore~

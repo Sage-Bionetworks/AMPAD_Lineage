@@ -102,3 +102,233 @@ cat('cogdx p-value: ',pt(abs(summary(cogdxfit)$coef[1,3]),cogdxfit$df.residual,l
 
 ```
 
+
+Making scatter plot of association with pseudotime and gwas summary statistics.  Get Kunkle statistics
+
+```{r}
+# kunkleStats <- data.table::fread('Kunkle_etal_Stage1_results.txt',data.table=F)
+# kunkleStatsTest <- kunkleStats
+# colnames(kunkleStatsTest) <- c('#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO')
+# kunkleStatsTest$QUAL <- 30
+# kunkleStatsTest$FILTER <- 'PASS'
+# kunkleStatsTest$INFO <- ''
+# write.table(kunkleStatsTest,file='kunkle.vcf',sep = '\t',row.names=F,quote=F)
+```
+
+run snpEff to annotate variants appropriately (with annotate_variants.sh)
+
+```{r}
+kunkleAnnotated <- data.table::fread('kunkle.final.ann.vcf',data.table=F,skip=5)
+```
+
+
+
+write function to split rows into 
+
+
+```{r}
+buildRecords <- function(chrom,pos,id,ref,alt,info){
+  foo <- strsplit(info,',')
+  bar <- lapply(foo,strsplit,'\\|')
+  bar <- unlist(bar,recursive=FALSE)
+  bar <- sapply(bar,function(x) x[4])
+  bar <- unique(bar)
+  df <- data.frame(chrom=chrom,
+                   pos=pos,
+                   id=id,
+                   ref=ref,
+                   alt=alt,
+                   GeneID=bar,
+                   stringsAsFactors=F)
+  return(df)
+}
+
+buildRecords2 <- function(id,info){
+  foo <- strsplit(info,',')
+  bar <- lapply(foo,strsplit,'\\|')
+  bar <- unlist(bar,recursive=FALSE)
+  bar <- sapply(bar,function(x) x[4])
+  bar <- unique(bar)
+  df <- data.frame(id=id,
+                   GeneID=bar,
+                   stringsAsFactors=F)
+  return(df)
+}
+
+system.time(res <- mapply(buildRecords,
+              kunkleAnnotated$`#CHROM`[1:1000],
+              kunkleAnnotated$POS[1:1000],
+              kunkleAnnotated$ID[1:1000],
+              kunkleAnnotated$REF[1:1000],
+              kunkleAnnotated$ALT[1:1000],
+              kunkleAnnotated$INFO[1:1000],
+              SIMPLIFY=FALSE))
+
+system.time(res <- mapply(buildRecords2,
+              kunkleAnnotated$ID,
+              kunkleAnnotated$INFO,
+              SIMPLIFY=FALSE))
+
+res <- do.call(rbind,res)
+kunkleStats <- data.table::fread('Kunkle_etal_Stage1_results.txt',data.table=F)
+combinedFrame <- dplyr::left_join(res,kunkleStats,by=c('id'='MarkerName'))
+write.table(combinedFrame,file='kunkle_stage1_results_gene_20kb.txt',sep='\t',row.names=F,quote=F)
+
+```
+
+group by and summarize
+
+```{r}
+combinedFrame$Pvalue <- as.numeric(combinedFrame$Pvalue)
+foobar <- dplyr::group_by(combinedFrame,GeneID)
+pval <- dplyr::summarise(foobar,meanPval=mean(-log10(Pvalue)))
+```
+
+
+read in count data and compute summaries.
+
+
+```{r}
+synapser::synLogin()
+
+tcxCPMObj <- synapser::synGet('syn8466816')
+#Dat <- read.delim(tcxCPMObj$path,stringsAsFactors = F)
+Dat <- data.table::fread(tcxCPMObj$path,data.table=F)
+sampleIds <- colnames(Dat)[-1]
+geneIds <- Dat$ensembl_gene_id
+Dat <- Dat[,-1]
+Dat <- t(Dat)
+colnames(Dat) <- geneIds
+Dat <- data.frame(Dat,stringsAsFactors=F)
+Dat$sampleId <- sampleIds
+tcx <- dplyr::left_join(tcx,Dat,by=c('SampleID'='sampleId'))
+tcx2 <- dplyr::select(tcx,dplyr::starts_with("ENSG"))
+corvec <- cor(tcx2,tcx$Pseudotime,method='spearman')
+corDf <- data.frame(geneid=colnames(tcx2),cor=corvec,stringsAsFactors=F)
+map <- utilityFunctions::convertEnsemblToHgnc(corDf$geneid)
+corDf <- dplyr::left_join(corDf,map,by=c('geneid'='ensembl_gene_id'))
+
+corDf <- dplyr::left_join(corDf,pval,c('external_gene_name'='GeneID'))
+
+```
+
+dlpfc
+```{r}
+dlpfcCPMObj <- synapser::synGet('syn8456638')
+Dat <- data.table::fread(dlpfcCPMObj$path,data.table=F)
+sampleIds <- colnames(Dat)[-1]
+geneIds <- Dat$ensembl_gene_id
+Dat <- Dat[,-1]
+Dat <- t(Dat)
+colnames(Dat) <- geneIds
+Dat <- data.frame(Dat,stringsAsFactors=F)
+Dat$sampleId <- sampleIds
+dlpfc <- dplyr::left_join(dlpfc,Dat,by=c('SampleID'='sampleId'))
+dlpfc2 <- dplyr::select(dlpfc,dplyr::starts_with("ENSG"))
+
+
+
+corvec <- cor(dlpfc2,dlpfc$Pseudotime,method='spearman')
+corDfdlpfc <- data.frame(geneid=colnames(dlpfc2),cor=corvec,stringsAsFactors=F)
+map <- utilityFunctions::convertEnsemblToHgnc(corDfdlpfc$geneid)
+corDfdlpfc <- dplyr::left_join(corDfdlpfc,map,by=c('geneid'='ensembl_gene_id'))
+
+
+
+```
+
+
+
+```{r}
+ad_gwas <- c("CR1",
+             "BIN1",
+             "INPP5D",
+             "HLA-DRB1",
+             "TREM2",
+             "MEF2C",
+             "NME8",
+             "CD2AP",
+             "NYAP1",
+             "EPHA1",
+             "PTK2B",
+             "CLU",
+             "SPI1",
+             "MS4A2",
+             "PICALM",
+             "SORL1",
+             "FERMT2",
+             "SLC24A4",
+             "ABCA7",
+             "APOE",
+             "CASS4",
+             "ECHDC3",
+             "ACE",
+             "NDUFAF6",
+             "ECHDC3",
+             "ADAMTS20",
+             "SPPL2A",
+             "ADAM10",
+             "IQCK",
+             "MIR142",
+             "ACE",
+             "ADAMTS1",
+             "SUCLG2P4",
+             "FST",
+             "OARD1",
+             "WWOX",
+             "MAF",
+             "CD55",
+             "YOD1",
+             "HLA-DRB1",
+             "PSMB8",
+             "C4A",
+             "GPSM3",
+             "HLA-DPA1",
+             "HLA-DQA1",
+             "HLA-DRA",
+             "HLA-DRB5",
+             "PSMB9",
+             "CD2AP",
+             "AGFG2",
+             "PILRA",
+             "EPHB4",
+             "C7orf43",
+             "GAL3ST4",
+             "ZKSCCAN1",
+             "FAM131B",
+             "PSMC3",
+             "ACP2",
+             "C1QTNF4",
+             "CELF1",
+             "MTCH2",
+             "NDUFS3",
+             "NUP160",
+             "MS4A6A",
+             "MS4A7",
+             "MS4A4A",
+             "EED",
+             "PICALM",
+             "STYX",
+             "RIN3",
+             "HMHA1",
+             "CNN2",
+             "WDR18",
+             "CASS4")
+
+mean(abs(corDf$cor))
+
+mean(abs(corDf[corDf$external_gene_name %in% ad_gwas,]$cor))
+
+
+corDf$adGwas <- corDf$external_gene_name %in% ad_gwas
+corDfdlpfc$adGwas <- corDfdlpfc$external_gene_name %in% ad_gwas
+corDf$brainRegion <- 'TCX'
+corDfdlpfc$brainRegion <- 'DLPFC'
+corDfcombined <- rbind(corDf,corDfdlpfc)
+g <- ggplot2::ggplot(corDfcombined,ggplot2::aes(x=brainRegion,y=(cor),fill=adGwas))
+g <- g + ggplot2::geom_violin()
+#g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
+g
+ggplot2::ggsave('newFigures/kunklegenecorrelations.png')
+```
+
