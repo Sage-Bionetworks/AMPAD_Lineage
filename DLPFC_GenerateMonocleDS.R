@@ -103,8 +103,6 @@ Dat4 <- Dat3[In_S,]
 #   Cov[,i] <- (Cov[,i] - min(Cov[,i]))/(max(Cov[,i])-min(Cov[,i]))
 # }
 
-
-
 source('LineageFunctions.R')
 temp <- DatNorm4
 temp2 <- Dat4

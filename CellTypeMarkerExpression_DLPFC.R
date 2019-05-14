@@ -1,14 +1,28 @@
 source('MiscPreprocessing.R')
 
 
+synapser::synLogin()
 
-#Read data
-Dat <- read.delim('Data/ROSMAP_DLPFC_logCPM.tsv',stringsAsFactors = F)
-Dat2 <- read.csv('Data/ROSMAP_DLPFC_Covariates3.csv',stringsAsFactors = F)
+tcxCPMObj <- synapser::synGet('syn8456638')
+Dat <- read.delim(tcxCPMObj$path,stringsAsFactors = F)
 
-#Sub-setting genes
-AMP_mods <-  read.csv('Data/DLPFC_DE.csv')
-In <- which(AMP_mods$LogPV.DLPFC >= 1)
+#synapse id of dat2 file: syn8466814
+tcxCovObj <- synapser::synGet('syn11024258')
+Dat2 <- read.delim(tcxCovObj$path,stringsAsFactors = F)
+
+
+
+foobar <- synapser::synGet('syn11695124')
+foobar2 <- data.table::fread(foobar$path,data.table=F)
+
+de_file <- synapser::synGet('syn8456721')
+de1 <- data.table::fread(de_file$path,data.table=F)
+de3 <- dplyr::filter(de1,Model=='Diagnosis',Comparison=='AD-CONTROL')
+AMP_mods <- data.frame(GeneID=de3$ensembl_gene_id,logPV= - log(de3$adj.P.Val)/log(10), stringsAsFactors=F)
+AMP_mods <- dplyr::filter(AMP_mods,GeneID%in% foobar2$GeneID)
+#subsetting genes based on differential expression 
+#AMP_mods <-  read.csv('Data/DLPFC_DE.csv')
+In <- which(AMP_mods$logPV >= 1)
 AMP_mods <- AMP_mods[In,]
 
 
@@ -71,33 +85,33 @@ Dat3 <- Dat2
 
 
 #Keeping only female data 
-Sex <- 'FEMALE'
-In_S <- which(Dat3$Sex == Sex)
+#Sex <- 'FEMALE'
+In_S <- which(Dat3$msex == 0)
 DatNorm4 <- DatNorm3[,In_S]
 Dat4 <- Dat3[In_S,]
 
-In_cov <- which(Cov$ID %in% Dat4$Donor_ID)
-Cov <- Cov[In_cov,]
-In_cov <- c()
-for(i in 1:length(Dat4$Donor_ID)){
-  temp <- which(Cov$ID == Dat4$Donor_ID[i])
-  In_cov <- c(In_cov,temp[1])
-}
-Cov <- Cov[In_cov,]
-
-for (i in 23:26){
-  Cov[,i] <- (Cov[,i] - min(Cov[,i]))/(max(Cov[,i])-min(Cov[,i]))
-}
+# In_cov <- which(Cov$ID %in% Dat4$Donor_ID)
+# Cov <- Cov[In_cov,]
+# In_cov <- c()
+# for(i in 1:length(Dat4$Donor_ID)){
+#   temp <- which(Cov$ID == Dat4$Donor_ID[i])
+#   In_cov <- c(In_cov,temp[1])
+# }
+# Cov <- Cov[In_cov,]
+# 
+# for (i in 23:26){
+#   Cov[,i] <- (Cov[,i] - min(Cov[,i]))/(max(Cov[,i])-min(Cov[,i]))
+# }
 
 
 #Running monocle
 source('LineageFunctions.R')
 temp <- DatNorm4
 temp2 <- Dat4
-temp2$APOE4 <- as.character(temp2$APOE4)
-temp2$braaksc <- as.character(temp2$braaksc)
-temp2$ceradsc <- as.character(temp2$ceradsc)
-temp2$cogdx.1 <- as.character(temp2$cogdx.1)
+# temp2$APOE4 <- as.character(temp2$APOE4)
+# temp2$braaksc <- as.character(temp2$braaksc)
+# temp2$ceradsc <- as.character(temp2$ceradsc)
+# temp2$cogdx.1 <- as.character(temp2$cogdx.1)
 
 gene_short_name <- Make.Gene.Symb(GeneNamesAD)
 
@@ -130,7 +144,7 @@ ScDat2 <- ScaleMatrix(ScDat2)
 
 
 #calculate average marker expression for Neurons, Astrocytes, Microglia and Oligodendrocytes 
-load('Data/mouseMarkerGenes.rda')
+load('mouseMarkerGenes.rda')
 BR_genes <- mouseMarkerGenes$Cortex
 for(i in 1:length(names(BR_genes))){
   BR_genes[[i]] <- toupper(BR_genes[[i]])
