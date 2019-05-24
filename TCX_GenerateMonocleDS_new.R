@@ -130,3 +130,27 @@ g<- plot_cell_trajectory(MonRun,color_by = "Diagnosis",show_branch_points=F,use_
 g <- g + ggplot2::scale_color_viridis_d()
 g
 dev.off()
+
+MonRun$State2 <- MonRun$State
+MonRun$State2[MonRun$State == 6] <- 4
+MonRun$State2[MonRun$State == 7] <- 6
+
+MonRun$State2[MonRun$State2 == 1] <- 7
+MonRun$State2[MonRun$State2 == 6] <- 1
+MonRun$State2[MonRun$State2 == 7] <- 6
+
+tiff(file='~/Desktop/MANUSCRIPT/figure4a.tiff',height=85,width=100,units='mm',res=300)
+g<- plot_cell_trajectory(MonRun,color_by = "State2",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="Lineage\nState")
+g
+dev.off()
+
+foo <- synapser::synTableQuery("SELECT * FROM syn18409904")$asDataFrame()
+foo <- foo[,-c(1:2)]
+rownames(foo) <- foo$col
+foo <- foo[,-c(1)]
+res<-pheatmap::pheatmap(foo)
+
+
+

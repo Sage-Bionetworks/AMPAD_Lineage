@@ -1,5 +1,6 @@
 #Loading pre-computed lineage
-load("~/Documents/DriverPrediction/LineageMisc/Data/TCX_Monocle.RData")
+#load("~/Documents/DriverPrediction/LineageMisc/Data/TCX_Monocle.RData")
+source('~/Projects/AMPAD_Lineage/TCX_GenerateMonocleDS.R')
 source('MonoclePlottingCustom.R')
 source('MiscPreprocessing.R')
 source('LineageFunctions.R')
@@ -56,4 +57,19 @@ for (i in 1:length(gene_short_name)){
 
 #Save data
 df2 <- as.data.frame(l2)
-saveRDS(df2,'Data/TCX_F_pv1_Anova_DE_1_6_switched.rds')
+
+dfa <- dplyr::select(df2,gene_names,dplyr::starts_with('p'))
+dfb <- dplyr::select(df2,gene_names,dplyr::starts_with('d'))
+
+dfa1 <- tidyr::gather(dfa,'state','pvalue',-gene_names)
+dfb1 <- tidyr::gather(dfb,'state','effect',-gene_names)
+
+dfa1$state <- sapply(dfa1$state,function(x) strsplit(x,'p_')[[1]][2])
+dfb1$state <- sapply(dfb1$state,function(x) strsplit(x,'d_')[[1]][2])
+
+df3 <- dplyr::left_join(dfa1,dfb1)
+
+write.csv(df3,file='tcx_anova_stats.csv',quote=F,row.names=F)
+
+
+#saveRDS(df2,'Data/TCX_F_pv1_Anova_DE_1_6_switched.rds')

@@ -49,9 +49,9 @@ tcxDf$BrainRegion <- 'TCX'
 dlpfcDf$BrainRegion <- 'DLPFC'
 combinedDf <- rbind(tcxDf,dlpfcDf)
 combinedDf <- combinedDf[!is.na(combinedDf$diagnosis),]
-combinedDf$diagnosis[combinedDf$diagnosis==1] <- 'LOAD'
+combinedDf$diagnosis[combinedDf$diagnosis==1] <- 'AD'
 combinedDf$diagnosis[combinedDf$diagnosis==0] <- 'Control'
-combinedDf$diagnosis <- factor(combinedDf$diagnosis,levels=c('Control','LOAD'))
+combinedDf$diagnosis <- factor(combinedDf$diagnosis,levels=c('AD','Control'))
 combinedDf$BrainRegion <- as.factor(combinedDf$BrainRegion)
 
 ```
@@ -64,8 +64,11 @@ g <- ggplot2::ggplot(combinedDf,ggplot2::aes(x=BrainRegion,
                                              color=diagnosis))
 g <- g + ggplot2::geom_boxplot()
 g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
+g <- g + ggplot2::scale_color_viridis_d()
+ tiff(file='~/Desktop/MANUSCRIPT/figure2b.tiff',height=85,width=100,units='mm',res=300)
 g
-ggplot2::ggsave('newFigures/adCaseControl.png')
+dev.off()
+#ggplot2::ggsave('newFigures/adCaseControl.tiff')
 ```
 
 Next do neuropathology associations.  First pull ROSMAP covariate file.
@@ -90,6 +93,8 @@ dlpfcComplete$cogdxNew[dlpfcComplete$cogdx==1] <- 'NCI'
 dlpfcComplete$cogdxNew[dlpfcComplete$cogdx==2] <- 'MCI'
 dlpfcComplete$cogdxNew[dlpfcComplete$cogdx==4] <- 'LOAD'
 dlpfcComplete$cogdxNew <- factor(dlpfcComplete$cogdxNew,levels = c('NCI','MCI','LOAD'))
+
+dlpfcComplete <- dlpfcComplete[!duplicated(dlpfcComplete),]
 
 braakfit <- MASS::polr(braaksc ~ Pseudotime,dlpfcComplete)
 ceradfit <- MASS::polr(ceradsc ~ Pseudotime,dlpfcComplete)
@@ -208,7 +213,7 @@ corDf <- data.frame(geneid=colnames(tcx2),cor=corvec,stringsAsFactors=F)
 map <- utilityFunctions::convertEnsemblToHgnc(corDf$geneid)
 corDf <- dplyr::left_join(corDf,map,by=c('geneid'='ensembl_gene_id'))
 
-corDf <- dplyr::left_join(corDf,pval,c('external_gene_name'='GeneID'))
+#corDf <- dplyr::left_join(corDf,pval,c('external_gene_name'='GeneID'))
 
 ```
 
@@ -325,10 +330,16 @@ corDfdlpfc$adGwas <- corDfdlpfc$external_gene_name %in% ad_gwas
 corDf$brainRegion <- 'TCX'
 corDfdlpfc$brainRegion <- 'DLPFC'
 corDfcombined <- rbind(corDf,corDfdlpfc)
-g <- ggplot2::ggplot(corDfcombined,ggplot2::aes(x=brainRegion,y=(cor),fill=adGwas))
-g <- g + ggplot2::geom_violin()
+colnames(corDfcombined)[4] <- 'LOADGWASGene'
+g <- ggplot2::ggplot(corDfcombined,ggplot2::aes(x=brainRegion,y=cor,fill=LOADGWASGene))
+g <- g + ggplot2::geom_boxplot()
+g <- g + ggplot2::scale_fill_viridis_d()
+g <- g + ggplot2::labs(x = 'Brain Region',y='Correlation with pseudotime',fill='LOAD\nGWAS\nGene')
+
 #g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
 g
-ggplot2::ggsave('newFigures/kunklegenecorrelations.png')
+ tiff(file='~/Desktop/MANUSCRIPT/figure2d.tiff',height=85,width=100,units='mm',res=300)
+g
+dev.off()
 ```
 

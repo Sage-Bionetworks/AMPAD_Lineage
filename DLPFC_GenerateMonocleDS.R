@@ -120,4 +120,9 @@ rownames(temp) <- NULL
 colnames(temp) <- NULL
 MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
 
-plot_cell_trajectory(MonRun, color_by = "Diagnosis")
+#tiff(filename='figure2A.tiff',height=85,width=85,units='mm',res=300)
+tiff(file='~/Desktop/MANUSCRIPT/figure2a.tiff',height=85,width=100,units='mm',res=300)
+g<- plot_cell_trajectory(MonRun,color_by = "Diagnosis",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
+g <- g + ggplot2::scale_color_viridis_d()
+g
+dev.off()
