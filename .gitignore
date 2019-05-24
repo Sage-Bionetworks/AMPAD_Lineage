@@ -14,3 +14,5 @@ kunkletest.tsv
 kunkletest.vcf
 mouseMarkerGenes.zip
 .gitignore~
+dlpfc_anova_stats.csv
+tcx_anova_stats.csv
