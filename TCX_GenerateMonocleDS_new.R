@@ -150,7 +150,16 @@ foo <- synapser::synTableQuery("SELECT * FROM syn18409904")$asDataFrame()
 foo <- foo[,-c(1:2)]
 rownames(foo) <- foo$col
 foo <- foo[,-c(1)]
-res<-pheatmap::pheatmap(foo)
+colnames(foo) <- c('State 4','State 5','State 6','State 1','State 3','State 2')
+tiff(file='~/Desktop/MANUSCRIPT/figure4b.tiff',height=85,width=100,units='mm',res=300)
+pheatmap::pheatmap(foo,show_rownames=F,color = viridis::viridis(100))
+dev.off()
 
+
+apoeDf <- data.frame(apoe=MonRun$Tissue.APOE4=='TCX.1' | MonRun$Tissue.APOE4=='TCX.2',
+                     State=MonRun$State2,
+                     stringsAsFactors=F)
+
+summary(glm(apoe ~ State,apoeDf,family='binomial'))
 
 

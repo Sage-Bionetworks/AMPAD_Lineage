@@ -193,8 +193,6 @@ dev.off()
 
 source('MonoclePlottingCustom.R')
 
-dev.off()
-
 #jpeg('./PaperFigs/DLPFC_diag_new.jpg',width = 600, height = 350)
 tiff(file='~/Desktop/MANUSCRIPT/figure3a1.tiff',height=85,width=100,units='mm',res=300)
 g<- plot_cell_trajectory(MonRun,color_by = "braaksc",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
@@ -252,5 +250,32 @@ g <- g + ggplot2::scale_fill_viridis_d()
 g <- g + ggplot2::labs(fill="Cognitive\nDiagnosis",y="Pseudotime",x="Cognitive Diagnosis")
 g
 dev.off()
+
+
+
+MonRun$State2 <- MonRun$State
+MonRun$State2[MonRun$State == 4] <- 3
+MonRun$State2[MonRun$State == 7] <- 3
+MonRun$State2[MonRun$State == 6] <- 4
+MonRun$State2[MonRun$State == 5] <- 4
+MonRun$State2[MonRun$State == 8] <- 5
+MonRun$State2[MonRun$State == 9] <- 6
+
+MonRun$State2 <- as.numeric(MonRun$State2)
+MonRun$State2 <- as.factor(MonRun$State2)
+
+tiff(file='~/Desktop/MANUSCRIPT/figureS6.tiff',height=85,width=100,units='mm',res=300)
+g<- plot_cell_trajectory(MonRun,color_by = "State2",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="Lineage\nState")
+g
+dev.off()
+
+
+apoeDf <- data.frame(apoe=MonRun$apoe_genotype==1 | MonRun$apoe_genotype==2,
+                     State=MonRun$State2,
+                     stringsAsFactors=F)
+
+summary(glm(apoe ~ State,apoeDf,family='binomial'))
 
 
