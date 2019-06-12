@@ -1,0 +1,86 @@
+---
+title: "bicluster enrichment analysis"
+output: html_notebook
+---
+
+pull data for biclustering
+
+```{r}
+synapser::synLogin()
+foo <- synapser::synTableQuery("SELECT * FROM syn18409904")$asDataFrame()
+foo <- foo[,-c(1:2)]
+rownames(foo) <- foo$col
+foo <- foo[,-c(1)]
+res<-pheatmap::pheatmap(foo)
+```
+
+extract genes for cluster with for clusters
+
+```{r}
+geneClusters <- cutree(res$tree_row,h = 2.0)
+names(geneClusters) <- rownames(foo)
+
+dFun <- function(i,gca){
+  return(names(gca[gca==i]))
+}
+
+geneClList <- lapply(1:4,dFun,geneClusters)
+names(geneClList) <- paste0('Cluster',1:4)
+
+```
+
+run enrichment analysis on gene clusters
+
+
+```{r}
+dummyFun <- function(geneSet){
+  res <- enrichR::enrichr(geneSet,databases = c('GO_Biological_Process_2018',
+                                                           'GO_Molecular_Function_2018',
+                                                           'GO_Cellular_Component_2018'))
+  return(res)
+}
+
+dummyFun2 <- function(listOfGO){
+  listOfGO$GO_Biological_Process_2018 <- dplyr::filter(listOfGO$GO_Biological_Process_2018,Adjusted.P.value <0.05)
+  listOfGO$GO_Molecular_Function_2018 <- dplyr::filter(listOfGO$GO_Molecular_Function_2018,Adjusted.P.value <0.05)
+  listOfGO$GO_Cellular_Component_2018 <- dplyr::filter(listOfGO$GO_Cellular_Component_2018,Adjusted.P.value <0.05)
+  return(listOfGO)
+}
+
+goEnrich <- lapply(geneClList,dummyFun)
+goEnrichFiltered <- lapply(goEnrich,dummyFun2)
+
+```
+
+
+
+Turn into a data frame
+
+```{r}
+dataframeify <- function(df,colVal,nameOfCol){
+  if(nrow(df)>0){
+    df <- cbind(df,colVal,stringsAsFactors=F)
+    colnames(df)[ncol(df)] <- nameOfCol
+    df[,ncol(df)] 
+  }else{
+    df <- cbind(df,c())
+    colnames(df)[ncol(df)] <- nameOfCol
+  }
+  return(df)
+}
+
+metaDFify <- function(a1){
+  a2<-mapply(dataframeify,a1,names(a1),MoreArgs = list(nameOfCol='Library'),SIMPLIFY=F)
+  a2 <- do.call(rbind,a2)
+  return(a2)
+}
+a3 <- lapply(goEnrichFiltered,metaDFify)
+a4 <- mapply(dataframeify,a3,names(a3),MoreArgs = list(nameOfCol='LineageCluster'),SIMPLIFY=F)
+a4 <- do.call(rbind,a4)
+
+a4$Overlap <- paste0('0 ',a4$Overlap)
+a4 <- dplyr::select(a4,Term,Library,LineageCluster,P.value,Adjusted.P.value,Overlap,Z.score,Genes)
+
+write.table(a4,file='go_linclust.tsv',sep='\t',row.names=F,quote=F)
+
+```

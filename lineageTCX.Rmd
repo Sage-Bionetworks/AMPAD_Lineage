@@ -1,0 +1,124 @@
+---
+title: "Lineage analyses"
+output: html_notebook
+---
+
+Pull down DLPFC ANOVA results
+
+```{r}
+synapser::synLogin()
+dlpfcObj <- synapser::synGet('syn18407769')
+dlpfc <- readRDS(dlpfcObj$path)
+dlpfc$gene_names<-as.character(dlpfc$gene_names)
+View(dlpfc)
+```
+
+
+Write a gmt file with the relevant gene sets
+
+
+```{r}
+getGeneSets = function(pval,dval,setName,setDescription,summaryMat){
+  resPos <- dplyr::filter(summaryMat,.data[[pval]]<0.05, .data[[dval]]>0)
+  resNeg <- dplyr::filter(summaryMat,.data[[pval]]<0.05, .data[[dval]]<0)
+  res <- list()
+  res$pos <- c(paste0(setName,'pos'),paste0(setDescription,'pos'),resPos$gene_names)
+  res$neg <- c(paste0(setName,'neg'),paste0(setDescription,'neg'),resNeg$gene_names)
+  return(res)
+}
+runList <- list()
+runList$pval <- paste0('p_',2:6)
+runList$dval <- paste0('d_',2:6)
+runList$setName <- paste0('branch',2:6)
+runList$setDescription <- paste0('branchSpecificDEG',2:6)
+res <- mapply(getGeneSets,
+              runList$pval,
+              runList$dval,
+              runList$setName,
+              runList$setDescription,
+              MoreArgs = list(summaryMat=dlpfc),
+              SIMPLIFY= FALSE)
+res <- unlist(res,recursive = F)
+#dummyFun <- function(string){
+#  cat(string,file='dlpfc.gmt',append=T,sep='\t')
+#  cat('\n',file='dlpfc.gmt',append=T,sep='')
+#}
+#fob<-sapply(res,dummyFun)
+```
+
+
+run a simple enrichment
+```{r}
+dummyFun <- function(geneSet){
+  res <- enrichR::enrichr(geneSet[-c(1:2)],databases = c('GO_Biological_Process_2018',
+                                                           'GO_Molecular_Function_2018',
+                                                           'GO_Cellular_Component_2018'))
+  return(res)
+}
+
+dummyFun2 <- function(listOfGO){
+  listOfGO$GO_Biological_Process_2018 <- dplyr::filter(listOfGO$GO_Biological_Process_2018,Adjusted.P.value <0.05)
+  listOfGO$GO_Molecular_Function_2018 <- dplyr::filter(listOfGO$GO_Molecular_Function_2018,Adjusted.P.value <0.05)
+  listOfGO$GO_Cellular_Component_2018 <- dplyr::filter(listOfGO$GO_Cellular_Component_2018,Adjusted.P.value <0.05)
+  return(listOfGO)
+}
+
+goEnrichment <- lapply(res,dummyFun)
+
+goEnrichmentFiltered <- lapply(goEnrichment,dummyFun2)
+
+```
+
+turn into a data frame
+
+```{r}
+dataframeify <- function(df,colVal,nameOfCol){
+  if(nrow(df)>0){
+    df <- cbind(df,colVal,stringsAsFactors=F)
+    colnames(df)[ncol(df)] <- nameOfCol
+    df[,ncol(df)] 
+  }else{
+    df <- cbind(df,c())
+    colnames(df)[ncol(df)] <- nameOfCol
+  }
+  return(df)
+}
+
+metaDFify <- function(a1){
+  a2<-mapply(dataframeify,a1,names(a1),MoreArgs = list(nameOfCol='Library'),SIMPLIFY=F)
+  a2 <- do.call(rbind,a2)
+  return(a2)
+}
+a3 <- lapply(goEnrichmentFiltered,metaDFify)
+a4 <- mapply(dataframeify,a3,names(a3),MoreArgs = list(nameOfCol='Branch'),SIMPLIFY=F)
+a4 <- do.call(rbind,a4)
+
+```
+
+Redefine branch
+
+```{r}
+dv <- gsub('p_[0-9]\\.pos','UP',a4$Branch)
+dv <- gsub('p_[0-9]\\.neg','DOWN',dv)
+dlpfc_enrich <- dplyr::mutate(a4,Direction = dv)
+
+mapFunction <- function(x){
+  if(length(grep('1',x))>0){
+    return(1)
+  }else if (length(grep('2',x))>0){
+    return(2)
+  }else if (length(grep('3',x))>0){
+    return(3)
+  }else if (length(grep('4',x))>0){
+    return(4)
+  }else if (length(grep('5',x))>0){
+    return(5)
+  } else if (length(grep('6',x))>0){
+    return(6)
+  }
+}
+dlpfc_enrich <- dplyr::mutate(dlpfc_enrich,BranchNumber = sapply(dlpfc_enrich$Branch,mapFunction))
+dlpfc_enrich <- dplyr::select(dlpfc_enrich,Term,Library,Direction,BranchNumber,P.value,Adjusted.P.value,Overlap,Z.score,Genes)
+dlpfc_enrich$Overlap <- paste0('0 ',dlpfc_enrich$Overlap)
+write.table(dlpfc_enrich,file='go_tcx.tsv',sep='\t',row.names=F,quote=F)
+```
