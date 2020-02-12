@@ -64,7 +64,8 @@ g <- ggplot2::ggplot(combinedDf,ggplot2::aes(x=BrainRegion,
                                              color=diagnosis))
 g <- g + ggplot2::geom_boxplot()
 g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
-g <- g + ggplot2::scale_color_viridis_d()
+#g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::scale_color_manual(values=viridis::viridis(3)[1:2])
  tiff(file='~/Desktop/MANUSCRIPT/figure2b.tiff',height=85,width=100,units='mm',res=300)
 g
 dev.off()
@@ -334,11 +335,12 @@ colnames(corDfcombined)[4] <- 'LOADGWASGene'
 g <- ggplot2::ggplot(corDfcombined,ggplot2::aes(x=brainRegion,y=cor,fill=LOADGWASGene))
 g <- g + ggplot2::geom_boxplot()
 g <- g + ggplot2::scale_fill_viridis_d()
+g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
 g <- g + ggplot2::labs(x = 'Brain Region',y='Correlation with pseudotime',fill='LOAD\nGWAS\nGene')
 
 #g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
 g
- tiff(file='~/Desktop/MANUSCRIPT/figure2d.tiff',height=85,width=100,units='mm',res=300)
+# tiff(file='~/Desktop/MANUSCRIPT/figure2d.tiff',height=85,width=100,units='mm',res=300)
 g
 dev.off()
 ```

@@ -124,6 +124,26 @@ MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gen
 
 #plot_cell_trajectory(MonRun, color_by = "Tissue.Diagnosis")
 
+#MonRun$apoe_genotype <- factor(MonRun$apoe_genotype,levels=c(0,1,2))
+fxn3 <- function(x){
+  if(x=='TCX.0'){
+    return(0)
+  }else if (x=='TCX.1'){
+    return(1)
+  }else if (x=='TCX.2'){
+    return(2)
+  }
+}
+MonRun$apoe <- sapply(MonRun$Tissue.APOE4,fxn3)
+MonRun$apoe <- factor(MonRun$apoe,levels=c(0,1,2))
+
+tiff(file='~/Desktop/MANUSCRIPT/figureS6b.tiff',height=85,width=100,units='mm',res=300)
+g<- plot_cell_trajectory(MonRun,color_by = "apoe",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="APOE e4 Dosage")
+g
+dev.off()
+
 
 tiff(file='~/Desktop/MANUSCRIPT/figure2aTCX.tiff',height=85,width=100,units='mm',res=300)
 g<- plot_cell_trajectory(MonRun,color_by = "Diagnosis",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)

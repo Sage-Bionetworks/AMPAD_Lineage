@@ -201,6 +201,15 @@ g <- g + ggplot2::labs(color="Braak Score")
 g
 dev.off()
 
+MonRun$apoe_genotype <- factor(MonRun$apoe_genotype,levels=c(0,1,2))
+tiff(file='~/Desktop/MANUSCRIPT/figureS6a.tiff',height=85,width=100,units='mm',res=300)
+g<- plot_cell_trajectory(MonRun,color_by = "apoe_genotype",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="APOE e4 Dosage")
+g
+dev.off()
+
+
 tiff(file='~/Desktop/MANUSCRIPT/figure3a2.tiff',height=85,width=100,units='mm',res=300)
 g<- plot_cell_trajectory(MonRun,color_by = "ceradsc",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
 g <- g + ggplot2::scale_color_viridis_d()
