@@ -1,16 +1,17 @@
 setwd("~/AMPAD_Lineage/LH_reviewer_response/DLPFC_LH_reviewer_response")
 source('MiscPreprocessing.R')
+source('DLPFC_MonocleFunction_SetRootState.R')
 
 #Loading data
 synapser::synLogin()
 
 #load rosmap filtered counts logCPM:
-tcxCPMObj <- synapser::synGet('syn8456638')
-Dat <- read.delim(tcxCPMObj$path,stringsAsFactors = F)
+dlpfcCPMObj <- synapser::synGet('syn8456638')
+Dat <- read.delim(dlpfcCPMObj$path,stringsAsFactors = F)
 
 #synapse id of dat2 file (rosmap covariates): syn8466814
-tcxCovObj <- synapser::synGet('syn11024258')
-Dat2 <- read.delim(tcxCovObj$path,stringsAsFactors = F)
+dlpfcCovObj <- synapser::synGet('syn11024258')
+Dat2 <- read.delim(dlpfcCovObj$path,stringsAsFactors = F)
 
 foobar <- synapser::synGet('syn11695124')
 foobar2 <- data.table::fread(foobar$path,data.table=F)
@@ -25,9 +26,6 @@ AMP_mods <- dplyr::filter(AMP_mods,GeneID%in% foobar2$GeneID)
 #AMP_mods <-  read.csv('Data/DLPFC_DE.csv')
 In <- which(AMP_mods$logPV >= 1)
 AMP_mods <- AMP_mods[In,]
-
-
-
 
 #Normalize all columns 
 GeneNames <- Dat$ensembl_gene_id
@@ -118,7 +116,7 @@ convertEnsemblToHgnc <- function(ensemblIds){
   
   ensembl=biomaRt::useMart('ENSEMBL_MART_ENSEMBL',
                            dataset = 'hsapiens_gene_ensembl',
-                           host='www.ensembl.org')
+                           host='useast.ensembl.org')
   
   genes<-getBM(attributes = c('ensembl_gene_id','external_gene_name'),
                filters='ensembl_gene_id',
@@ -144,139 +142,137 @@ Make.Gene.Symb <- function(GeneENSG){
 }
 gene_short_name <- Make.Gene.Symb(GeneNamesAD)
 
+ 
+rosmapObj <- synapser::synGet('syn3191087')
+rosmap <- data.table::fread(rosmapObj$path,data.table=F)
 
-# tcxLineageTimes <- synapser::synTableQuery("select * from syn17023721")$asDataFrame()
-dlpfcLineageTimes <- synapser::synTableQuery("select * from syn17023795")$asDataFrame()
-# tcxCovObj <- synapser::synGet("syn8466814")
-# tcxCov <- data.table::fread(tcxCovObj$path,data.table=F)
-# dlpfcCovObj <- synapser::synGet("syn11024258")
-# dlpfcCov <- data.table::fread(dlpfcCovObj$path,data.table=F)
-# tcxLineageTimes <- tcxLineageTimes[,-c(1:3)]
-# dlpfcLineageTimes <- dlpfcLineageTimes[,-c(1:3)]
-# dlpfc <- dplyr::left_join(dlpfcLineageTimes,dlpfcCov,by='SampleID')
-# tcx <- dplyr::left_join(tcxLineageTimes,tcxCov,by='SampleID')
-# 
-# tcxAD <- rep(NA,nrow(tcx))
-# tcxAD[tcx$Tissue.Diagnosis == 'TCX.AD'] <- 1
-# tcxAD[tcx$Tissue.Diagnosis == 'TCX.CONTROL'] <- 0
-# tcxDf <- data.frame(diagnosis=tcxAD,
-#                     pseudotime=tcx$Pseudotime,
-#                     stringsAsFactors = FALSE)
-# tcxDf$pseudotime <- scale(tcxDf$pseudotime,center=F)
-# summary(glm(diagnosis ~ pseudotime,tcxDf,family='binomial'))
-# 
-# dlpfcAD <- rep(NA,nrow(dlpfc))
-# dlpfcAD[dlpfc$Diagnosis == 'AD'] <- 1
-# dlpfcAD[dlpfc$Diagnosis == 'CONTROL'] <- 0
-# dlpfcDf <- data.frame(diagnosis = dlpfcAD,
-#                       pseudotime=dlpfc$Pseudotime,
-#                       stringsAsFactors = FALSE)
-# dlpfcDf$pseudotime <- scale(dlpfcDf$pseudotime,center=F)
-# 
-# tcxDf$BrainRegion <- 'TCX'
-# dlpfcDf$BrainRegion <- 'DLPFC'
-# combinedDf <- rbind(tcxDf,dlpfcDf)
-# combinedDf <- combinedDf[!is.na(combinedDf$diagnosis),]
-# combinedDf$diagnosis[combinedDf$diagnosis==1] <- 'AD'
-# combinedDf$diagnosis[combinedDf$diagnosis==0] <- 'Control'
-# combinedDf$diagnosis <- factor(combinedDf$diagnosis,levels=c('AD','Control'))
-# combinedDf$BrainRegion <- as.factor(combinedDf$BrainRegion)
-# 
-# 
-# rosmapObj <- synapser::synGet('syn3191087')
-# rosmap <- data.table::fread(rosmapObj$path,data.table=F)
-# 
-# rosmapIdObj <- synapser::synGet('syn3382527')
-# rosmapId <- data.table::fread(rosmapIdObj$path,data.table=F)
-# rosmapId <- dplyr::select(rosmapId,projid,rnaseq_id)
-# 
-# rosmapRNAid<-dplyr::left_join(rosmapId,rosmap)
-# dlpfcComplete<-dplyr::left_join(dlpfcLineageTimes,rosmapRNAid,by=c('SampleID'='rnaseq_id'))
-# dlpfcComplete$Pseudotime <- scale(dlpfcComplete$Pseudotime,center=F)
-# 
-# dlpfcComplete <- dplyr::select(dlpfcComplete,Pseudotime,braaksc,ceradsc,cogdx,SampleID)
-# 
-# 
-# dlpfcComplete$braaksc <- factor(dlpfcComplete$braaksc,levels = c(0:6))
-# dlpfcComplete$ceradsc <- factor(dlpfcComplete$ceradsc,levels = c(1:4))
-# dlpfcComplete$cogdxNew <- rep(NA,nrow(dlpfcComplete))
-# dlpfcComplete$cogdxNew[dlpfcComplete$cogdx==1] <- 'NCI'
-# dlpfcComplete$cogdxNew[dlpfcComplete$cogdx==2] <- 'MCI'
-# dlpfcComplete$cogdxNew[dlpfcComplete$cogdx==4] <- 'LOAD'
-# dlpfcComplete$cogdxNew <- factor(dlpfcComplete$cogdxNew,levels = c('NCI','MCI','LOAD'))
-# 
-# dlpfcComplete <- dlpfcComplete[!duplicated(dlpfcComplete),]
-# temp2 <- dplyr::left_join(temp2,dlpfcComplete,by='SampleID')
-# 
-# temp2$cogdx.x <- as.factor(temp2$cogdx.x)
+#add in braak score & cerad score
+rosmapIdObj <- synapser::synGet('syn3382527')
+rosmapId <- data.table::fread(rosmapIdObj$path,data.table=F)
+rosmapId <- dplyr::select(rosmapId,projid,rnaseq_id)
+rosmapRNAid<-dplyr::left_join(rosmapId,rosmap)
+#remove duplicate rows
+rosmapRNAid <- unique(rosmapRNAid)
+rosmapRNAid2 <- subset(rosmapRNAid, select=c(rnaseq_id,braaksc,ceradsc))
+names(rosmapRNAid2)[names(rosmapRNAid2) == "rnaseq_id"] <- "SampleID"
 
+temp2<-dplyr::left_join(temp2,rosmapRNAid2, by="SampleID")
+#create a log PMI column (PMI is heavily right-skewed)
+temp2$log_pmi <- log(temp2$pmi + 1)
+#rename RIN column to match MonocleFunction_SetRootState.R
+names(temp2)[names(temp2) == "RINcontinuous"] <- "RIN"
+
+temp2$braaksc <- factor(temp2$braaksc,levels = c(0:6))
+temp2$ceradsc <- factor(temp2$ceradsc,levels = c(1:4))
+temp2$cogdxNew <- ifelse(temp2$cogdx==1, 'NCI',
+                         ifelse(temp2$cogdx==2, 'MCI',
+                                       ifelse(temp2$cogdx==4, 'LOAD', NA)))
+temp2$cogdxNew<- factor(temp2$cogdxNew,levels = c('NCI','MCI','LOAD'))
+dlpfc_pcs <- read.csv("~/AMPAD_Lineage/LH_reviewer_response/DLPFC_principal_components_F.csv")
+dlpfc_pcs$SampleID <- as.character(dlpfc_pcs$SampleID)
+temp2 <- dplyr::left_join(temp2, dlpfc_pcs, by="SampleID")
+
+#for the genetic PCs-adjusted analysis, need to delete patients without 
+#genetic data and recreate temp and temp2 inputs
+temp2_PC <- subset(temp2, !is.na(temp2$PC1))
+dim(temp2_PC)
+In_PCs <- which(!is.na(temp2$PC1))
+DatNorm_PC <- DatNorm4[,In_PCs]
+temp_PC <- DatNorm_PC
+
+saveRDS(temp, file="DLPFC_countmatrix_Mono.rds")
+saveRDS(temp2, file="DLPFC_cell_metadata_Mono.rds")
+saveRDS(temp_PC, file="DLPFC_countmatrixPC_Mono.rds")
+saveRDS(temp2_PC, file="DLPFC_cell_metadataPC_Mono.rds")
+saveRDS(gene_short_name, file="DLPFC_gene_metadata_Mono.rds")
+#read in data files to simply run monocle:
+#temp <- readRDS(file="DLPFC_countmatrix_Mono.rds")
+#temp2 <- readRDS(file="DLPFC_cell_metadata_Mono.rds")
+#temp_PC <- readRDS(file="DLPFC_countmatrixPC_Mono.rds")
+#temp2_PC <- readRDS(file="DLPFC_cell_metadataPC_Mono.rds")
+#gene_short_name <- readRDS(file="DLPFC_gene_metadata_Mono.rds")
 
 #running monocle
 rownames(temp) <- NULL
 colnames(temp) <- NULL
+rownames(temp_PC) <- NULL
+colnames(temp_PC) <- NULL
 
 detach("package:synapser", unload = TRUE)
 unloadNamespace("PythonEmbedInR") 
-library(monocle)
-MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
-plot_cell_trajectory(MonRun,color_by = "Diagnosis",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
+#library(monocle)
+MonRun <- RunMonocleTobit_unadj(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
+g<- plot_cell_trajectory(MonRun,color_by = "Diagnosis",show_branch_points=F,use_color_gradient = F,cell_size = 1)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="Diagnosis")
+g
 
-#compare my pseudotime estimates to what is store in the project
-#Create differential expression based on state 
-MonRun2 = MonRun
-ScaledDat = ScaleMatrix(MonRun2@assayData$exprs)
-#MonRun2@assayData$exprs <- ScaledDat
-MonRun$State2 <- MonRun$State
-MonRun$State2[MonRun$State == 4] <- 3
-MonRun$State2[MonRun$State == 7] <- 3
-MonRun$State2[MonRun$State == 6] <- 5
+#adjust for RIN
+MonRun_RIN <- RunMonocleTobit_RIN(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
+g<- plot_cell_trajectory(MonRun_RIN,color_by = "Diagnosis",show_branch_points=F,use_color_gradient = F,cell_size = 1)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="Diagnosis")
+g
 
 
-#find centers for each state 
-UnqStates <-as.vector(unique(MonRun$State))
-C_s1 <- rep(0,length(UnqStates))
-C_s2 <- rep(0,length(UnqStates))
+MonRun_PMI <- RunMonocleTobit_PMI(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
+g<- plot_cell_trajectory(MonRun_PMI,color_by = "Diagnosis",show_branch_points=F,use_color_gradient = F,cell_size = 1)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="Diagnosis")
+g
 
-for (i in 1:length(UnqStates)){
-  In_s <- which(MonRun$State==UnqStates[i])
-  C_s1[i] <- mean(MonRun@reducedDimS[1,In_s])
-  C_s2[i] <- mean(MonRun@reducedDimS[2,In_s])
-  
-}
 
-D_mean <- rep(0,length(MonRun$State))
+MonRun_PCs <- RunMonocleTobit_PCs(temp_PC, temp2_PC, C_by = 'Pseudotime',gene_short_name = gene_short_name)
+g<- plot_cell_trajectory(MonRun_PCs,color_by = "Diagnosis",show_branch_points=F,use_color_gradient = F,cell_size = 1)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="Diagnosis")
+g
 
-#For each sample, find the distance to the state mean 
-for(i in 1:length(MonRun$State)){
-  In_S <- which(UnqStates==MonRun$State[i])
-  D_mean[i] <- sqrt((MonRun@reducedDimS[1,i]-C_s1[In_S])**2 + (MonRun@reducedDimS[2,i]-C_s2[In_S])**2)
-  
-}
+MonRun_ALL <- RunMonocleTobit_ALL(temp_PC, temp2_PC, C_by = 'Pseudotime',gene_short_name = gene_short_name)
+g<- plot_cell_trajectory(MonRun_ALL,color_by = "Diagnosis",show_branch_points=F,use_color_gradient = F,cell_size = 1)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="Diagnosis")
+g
 
-#Normalize each sample's distance based on max distance for that state
-D_meanNorm <- rep(0,length(MonRun$State))
 
-for(i in 1:length(MonRun$State)){
-  In_S <- which(MonRun$State==MonRun$State[i])
-  D_meanNorm[i] <- (D_mean[i]-min(D_mean[In_S]))/max(D_mean[In_S])
-  
-}
 
-#Make new dataframe with SampleID, D_mean, D_meanNorm, State, Pseudotime
-l <- list()
+#output pseudotimes in a dataframe similar to the existing pseudotimes in synapse (copied from TCX_BranchPhenotype.R)
+#Make new dataframe with SampleID, State, Pseudotime
+x <- list()
 
-MonRun$D_mean <- D_mean
-MonRun$D_meanNorm <- D_meanNorm
 
-l$SampleID <- MonRun$SampleID
-l$D_mean <- MonRun$D_mean
-l$D_meanNorm <- MonRun$D_meanNorm
-l$State <- MonRun$State
-l$Pseudotime <- MonRun$Pseudotime
+x$SampleID <- MonRun$SampleID
+x$State_unadj <- MonRun$State
+x$Pseudotime_unadj <- MonRun$Pseudotime
+x$State_RIN <- MonRun_RIN$State
+x$Pseudotime_RIN <- MonRun_RIN$Pseudotime
+x$State_PMI <- MonRun_PMI$State
+x$Pseudotime_PMI <- MonRun_PMI$Pseudotime
+y <- list()
+y$SampleID <- MonRun_PCs$SampleID
+y$State_PCs <- MonRun_PCs$State
+y$Pseudotime_PCs <- MonRun_PCs$Pseudotime
+y$State_ALL <- MonRun_ALL$State
+y$Pseudotime_ALL <- MonRun_ALL$Pseudotime
 
-l <- as.data.frame(l)
+x <- as.data.frame(x)
+x$SampleID <- as.character(x$SampleID)
+y <- as.data.frame(y)
+y$SampleID <- as.character(y$SampleID)
 
-write.csv(l,'DLPFC_F_pv1_StatePhenotype_replicated.csv')
+z <- dplyr::left_join(x,y, by="SampleID")
+
+write.csv(z,'~/AMPAD_Lineage/LH_reviewer_response/DLPFC_F_PStimes_adjusted.csv')
+
+
+
+
+
+
+
+
+
+
 
 #tiff(filename='figure2A.tiff',height=85,width=85,units='mm',res=300)
 #tiff(file='~/Desktop/MANUSCRIPT/figure2a.tiff',height=85,width=100,units='mm',res=300)
@@ -383,7 +379,67 @@ summary(glm(apoe ~ State,apoeDf,family='binomial'))
 
 
 
-######Change the function from LineageFunctions.R to adjust for RIN####
+
+
+#Create differential expression based on state 
+MonRun_adj2 = MonRun_adj
+ScaledDat = ScaleMatrix(MonRun_adj2@assayData$exprs)
+#MonRun2@assayData$exprs <- ScaledDat
+MonRun_adj$State2 <- MonRun_adj$State
+MonRun_adj$State2[MonRun_adj$State == 4] <- 3
+MonRun_adj$State2[MonRun_adj$State == 7] <- 3
+MonRun_adj$State2[MonRun_adj$State == 6] <- 5
+
+
+#find centers for each state 
+UnqStates <-as.vector(unique(MonRun_adj$State))
+C_s1 <- rep(0,length(UnqStates))
+C_s2 <- rep(0,length(UnqStates))
+
+for (i in 1:length(UnqStates)){
+  In_s <- which(MonRun_adj$State==UnqStates[i])
+  C_s1[i] <- mean(MonRun_adj@reducedDimS[1,In_s])
+  C_s2[i] <- mean(MonRun_adj@reducedDimS[2,In_s])
+  
+}
+
+D_mean <- rep(0,length(MonRun_adj$State))
+
+#For each sample, find the distance to the state mean 
+for(i in 1:length(MonRun_adj$State)){
+  In_S <- which(UnqStates==MonRun_adj$State[i])
+  D_mean[i] <- sqrt((MonRun_adj@reducedDimS[1,i]-C_s1[In_S])**2 + (MonRun_adj@reducedDimS[2,i]-C_s2[In_S])**2)
+  
+}
+
+#Normalize each sample's distance based on max distance for that state
+D_meanNorm <- rep(0,length(MonRun_adj$State))
+
+for(i in 1:length(MonRun_adj$State)){
+  In_S <- which(MonRun_adj$State==MonRun_adj$State[i])
+  D_meanNorm[i] <- (D_mean[i]-min(D_mean[In_S]))/max(D_mean[In_S])
+  
+}
+
+#Make new dataframe with SampleID, D_mean, D_meanNorm, State, Pseudotime
+l_adj <- list()
+
+MonRun_adj$D_mean <- D_mean
+MonRun_adj$D_meanNorm <- D_meanNorm
+
+l_adj$SampleID <- MonRun_adj$SampleID
+l_adj$D_mean <- MonRun_adj$D_mean
+l_adj$D_meanNorm <- MonRun_adj$D_meanNorm
+l_adj$State <- MonRun_adj$State
+l_adj$Pseudotime <- MonRun_adj$Pseudotime
+
+l_adj <- as.data.frame(l_adj)
+write.csv(l_adj,'DLPFC_F_pv1_StatePhenotype_RINadj.csv')
+
+
+
+
+######Change the function from LineageFunctions.R to adjust for PMI####
 RunMonocleTobit_adj <- function(Dat, Labels, max_components=2, meth = 'DDRTree',  C_by = NULL, 
                                 gene_short_name = NULL){ 
   
@@ -411,7 +467,7 @@ RunMonocleTobit_adj <- function(Dat, Labels, max_components=2, meth = 'DDRTree',
                          featureData = fd,
                          expressionFamily=tobit())
   
-  HSMM <- reduceDimension(HSMM, max_components=max_components, reduction_method = meth, residualModelFormulaStr = "~RINcontinuous")
+  HSMM <- reduceDimension(HSMM, max_components=max_components, reduction_method = meth, residualModelFormulaStr = "~pmi")
   HSMM <- orderCells(HSMM)
   if(is.null(C_by)){
     plot_cell_trajectory(HSMM, color_by="Labels")
