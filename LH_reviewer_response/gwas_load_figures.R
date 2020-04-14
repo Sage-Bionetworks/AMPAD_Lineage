@@ -72,7 +72,9 @@ Dat_tcx$sampleId <- sampleIds
 tcx <- dplyr::left_join(tcx,Dat_tcx,by=c('SampleID'='sampleId'))
 tcx2 <- dplyr::select(tcx,dplyr::starts_with("ENSG"))
 #corvec <- cor(tcx2,tcx$Pseudotime_unadj,method='spearman')
-corvec <- cor(tcx2,tcx$Pseudotime_PCs,method='spearman')
+#corvec <- cor(tcx2,tcx$Pseudotime_PCs,method='spearman')
+#corvec <- cor(tcx2,tcx$Pseudotime_RIN,method='spearman')
+corvec <- cor(tcx2,tcx$Pseudotime_PMI,method='spearman')
 corDf <- data.frame(geneid=colnames(tcx2),cor=corvec,stringsAsFactors=F)
 #gene_names <- corDf$geneid
 #map <- utilityFunctions::convertEnsemblToHgnc(corDf$geneid)
@@ -95,10 +97,13 @@ Dat <- data.frame(Dat,stringsAsFactors=F)
 Dat$sampleId <- sampleIds
 dlpfc <- dplyr::left_join(dlpfc,Dat,by=c('SampleID'='sampleId'))
 dlpfc2 <- dplyr::select(dlpfc,dplyr::starts_with("ENSG"))
-#corvec <- cor(dlpfc2,dlpfc$Pseudotime_unadj,method='spearman')
 #to look at PC-adjusted pseudotime, need to remove NAs to run the correlation
-
-corvec <- cor(dlpfc2,dlpfc$Pseudotime_PCs,method='spearman')
+#dlpfc_pc <- subset(dlpfc, !is.na(dlpfc$Pseudotime_PCs))
+#dlpfc2_pc <- dplyr::select(dlpfc_pc,dplyr::starts_with("ENSG"))
+#corvec <- cor(dlpfc2,dlpfc$Pseudotime_unadj,method='spearman')
+#corvec <- cor(dlpfc2_pc,dlpfc_pc$Pseudotime_PCs,method='spearman')
+#corvec <- cor(dlpfc2_pc,dlpfc_pc$Pseudotime_RIN,method='spearman')
+corvec <- cor(dlpfc2,dlpfc$Pseudotime_PMI,method='spearman')
 corDfdlpfc <- data.frame(geneid=colnames(dlpfc2),cor=corvec,stringsAsFactors=F)
 corDfdlpfc2 <- corDfdlpfc
 corDfdlpfc2$external_gene_name <- Make.Gene.Symb(corDfdlpfc2$geneid)
@@ -203,7 +208,7 @@ g <- ggplot2::ggplot(corDfcombined,ggplot2::aes(x=brainRegion,y=cor,fill=LOADGWA
 g <- g + ggplot2::geom_boxplot()
 g <- g + ggplot2::scale_fill_viridis_d()
 #g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
-g <- g + ggplot2::labs(x = 'Brain Region',y='Correlation with pseudotime',fill='LOAD\nGWAS\nGene')
+g <- g + ggplot2::labs(x = 'Brain Region',y='Correlation with PMI-adj pseudotime',fill='LOAD\nGWAS\nGene')
 
 #g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
 g
