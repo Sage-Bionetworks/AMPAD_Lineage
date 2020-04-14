@@ -2,16 +2,32 @@ source('MiscPreprocessing.R')
 
 
 #Loading data 
-Dat <- read.delim('Data/MAYO_CBE_TCX_logCPM.tsv',stringsAsFactors = F)
-Dat2 <- read.delim('Data/MAYO_CBE_TCX_Covariates.tsv',stringsAsFactors = F)
+synapser::synLogin()
 
-Cov <- read.csv('Data/mayo_igap_snps.csv',stringsAsFactors = F)
-Cov[,2:22] <- round(Cov[,2:22])
+tcxCPMObj <- synapser::synGet('syn8466816')
+Dat <- read.delim(tcxCPMObj$path,stringsAsFactors = F)
 
-#Sub-setting genes
-AMP_mods <-  read.csv('Data/TCX_DE.csv')
+#synapse id of dat2 file: syn8466814
+tcxCovObj <- synapser::synGet('syn8466814')
+Dat2 <- read.delim(tcxCovObj$path,stringsAsFactors = F)
+
+#subsetting genes based on differential expression
+#synapse id of DE file: syn8468023?
+de_file <- synapser::synGet('syn8468023')
+de_file2 <- synapser::synGet('syn18475579')
+
+de1 <- data.table::fread(de_file$path,data.table=F)
+de2 <- data.table::fread(de_file2$path,data.table=F)
+de3 <- dplyr::filter(de1,Model=='Diagnosis',Comparison=='AD-CONTROL',Tissue.ref=='TCX')
+#AMP_mods <-  read.csv('Data/TCX_DE.csv')
+#AMP_mods <- data.frame(GeneID=de3$ensembl_gene_id,logPV= - log(de3$adj.P.Val)/log(10), stringsAsFactors=F)
+AMP_mods <- de2[,-1]
 In <- which(AMP_mods$logPV >= 1)
 AMP_mods <- AMP_mods[In,]
+
+#Cov <- read.csv('Data/mayo_igap_snps.csv',stringsAsFactors = F)
+#Cov[,2:22] <- round(Cov[,2:22])
+
 
 
 
@@ -74,22 +90,23 @@ In_S <- which(Dat3$Sex == Sex)
 DatNorm4 <- DatNorm3[,In_S]
 Dat4 <- Dat3[In_S,]
 
-In_cov <- which(Cov$ID %in% Dat4$Donor_ID)
-Cov <- Cov[In_cov,]
-In_cov <- c()
-for(i in 1:length(Dat4$Donor_ID)){
-  temp <- which(Cov$ID == Dat4$Donor_ID[i])
-  In_cov <- c(In_cov,temp[1])
-}
-Cov <- Cov[In_cov,]
-
-for (i in 23:26){
-  Cov[,i] <- (Cov[,i] - min(Cov[,i]))/(max(Cov[,i])-min(Cov[,i]))
-}
+# In_cov <- which(Cov$ID %in% Dat4$Donor_ID)
+# Cov <- Cov[In_cov,]
+# In_cov <- c()
+# for(i in 1:length(Dat4$Donor_ID)){
+#   temp <- which(Cov$ID == Dat4$Donor_ID[i])
+#   In_cov <- c(In_cov,temp[1])
+# }
+# Cov <- Cov[In_cov,]
+# 
+# for (i in 23:26){
+#   Cov[,i] <- (Cov[,i] - min(Cov[,i]))/(max(Cov[,i])-min(Cov[,i]))
+# }
 
 source('LineageFunctions.R')
 temp <- DatNorm4
-temp2 <- cbind(Dat4,Cov)
+#temp2 <- cbind(Dat4,Cov)
+temp2 <- Dat4
 
 #Getting gene symbols from ENSG
 gene_short_name <- Make.Gene.Symb(GeneNamesAD)
@@ -125,7 +142,8 @@ ScDat2 <- ScaleMatrix(ScDat2)
 
 
 #calculate average marker expression for Neurons, Astrocytes, Microglia and Oligodendrocytes 
-load('Data/mouseMarkerGenes.rda')
+#load('Data/mouseMarkerGenes.rda')
+load('mouseMarkerGenes.rda')
 BR_genes <- mouseMarkerGenes$Cortex
 for(i in 1:length(names(BR_genes))){
   BR_genes[[i]] <- toupper(BR_genes[[i]])
