@@ -119,6 +119,117 @@ gene_short_name <- Make.Gene.Symb(GeneNamesAD)
 rownames(temp) <- NULL
 colnames(temp) <- NULL
 MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
+#save.image(file='temp41720.rda')
+
+
+set.seed(2)
+res <- vector('list',ncol(temp))
+corvec <- rep(0,ncol(temp))
+for (i in 1:ncol(temp)){
+  print(i)
+  #ind1<-sample(1:ncol(temp),ncol(temp),replace = T)
+  res[[i]] <- RunMonocleTobit(temp[,-i], temp2[-i,], C_by = 'Pseudotime',gene_short_name = gene_short_name)
+  corvec[i] <- abs(cor(MonRun$Pseudotime[-i],res[[i]]$Pseudotime,method='spearman'))
+  hist(corvec[1:i])
+}
+
+for (i in 1:ncol(temp)){
+  corvec[i] <- (cor(MonRun$Pseudotime[-i],res[[i]]$Pseudotime,method='spearman'))
+  #hist(corvec[1:i])
+}
+cordf <- data.frame(cor=corvec,brainRegion='TCX',stringsAsFactors = F)
+g <- ggplot2::ggplot(cordf,ggplot2::aes(cor,fill='red'))
+g <- g + ggplot2::geom_density(adjust=.1)
+g <- g + cowplot::theme_cowplot()
+g
+
+write.csv(cordf,file='tcx_jacknifed_correlations.csv',quote=F,row.names=F)
+
+save(res,file='tcx_jacknifed_lineages.rda')
+
+
+set.seed(47)
+tcx_pca <- svd(scale(t(temp)))$u[,1:2]
+system.time(tcx_tsne <- tsne::tsne(scale(t(temp))))
+tcx_umap <- umap::umap(scale(t(temp)))
+
+tcx_dimred_df <- data.frame(Pseudotime=MonRun$Pseudotime,
+                              PCA1=tcx_pca[,1],
+                              PCA2=tcx_pca[,2],
+                              tSNE1=tcx_tsne[,1],
+                              tSNE2=tcx_tsne[,2],
+                              UMAP1=tcx_umap$layout[,1],
+                              UMAP2=tcx_umap$layout[,2],
+                              stringsAsFactors=F)
+
+
+tiff(file='~/Desktop/figure_tcx_pseudotime_pca1.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(tcx_dimred_df,
+                       x='Pseudotime',
+                       y='PCA1',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-0.2)
+g
+dev.off()
+
+tiff(file='~/Desktop/figure_tcx_pseudotime_pca2.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(tcx_dimred_df,
+                       x='Pseudotime',
+                       y='PCA2',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-0.35)
+g
+dev.off()
+
+tiff(file='~/Desktop/figure_tcx_pseudotime_tsne1.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(tcx_dimred_df,
+                       x='Pseudotime',
+                       y='tSNE1',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-10)
+g
+dev.off()
+
+tiff(file='~/Desktop/figure_tcx_pseudotime_tsne2.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(tcx_dimred_df,
+                       x='Pseudotime',
+                       y='tSNE2',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-10)
+g
+dev.off()
+
+
+tiff(file='~/Desktop/figure_tcx_pseudotime_umap1.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(tcx_dimred_df,
+                       x='Pseudotime',
+                       y='UMAP1',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-2.5)
+g
+dev.off()
+
+tiff(file='~/Desktop/figure_tcx_pseudotime_umap2.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(tcx_dimred_df,
+                       x='Pseudotime',
+                       y='UMAP2',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=3)
+g
+dev.off()
+
 
 
 

@@ -345,3 +345,43 @@ g
 dev.off()
 ```
 
+```{r}
+tcx_anova <- data.table::fread('tcx_anova_stats.csv',data.table=F)
+dlpfc_anova <- data.table::fread('dlpfc_anova_stats.csv',data.table=F)
+
+tcx_anova$adjP <- p.adjust(tcx_anova$pvalue,method='fdr')
+dlpfc_anova$adjP <- p.adjust(dlpfc_anova$pvalue,method='fdr')
+tcx_anova$brainRegion <- 'TCX'
+dlpfc_anova$brainRegion <- 'DLPFC'
+comb_anova <- rbind(dlpfc_anova,tcx_anova)
+comb_anova2 <- dplyr::filter(comb_anova,adjP<=0.05)
+
+#foo2 <- dplyr::select(foo,GeneID,Module)
+fxn1 <- function(x){
+  if(x>0){
+    return('Up')
+  }else{
+    return('Down')
+  }
+}
+comb_anova2$summary <- paste0(comb_anova2$brainRegion,
+                              '_',
+                              comb_anova2$state,
+                              '_',
+                              sapply(comb_anova2$effect,fxn1))
+
+foo2 <- dplyr::select(comb_anova2,gene_names,summary)
+foo2$Presence <- 1
+foo3 <- tidyr::pivot_wider(foo2,
+                           id_cols = "gene_names",
+                           names_from = "summary",
+                           values_from = "Presence")
+foo3[is.na(foo3)] <- 0
+foo3 <- data.frame(foo3,stringsAsFactors=F)
+tiff(filename = '~/Desktop/upset.tiff', height = 6, width = 6,units='in',pointsize=1,res=300)
+UpSetR::upset(foo3,nsets=15)
+dev.off()
+#foo4 <- dplyr::select(foo3,GeneID,TCXblue,IFGyellow,PHGyellow)
+#resu <- list()
+
+```

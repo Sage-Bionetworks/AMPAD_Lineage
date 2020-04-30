@@ -182,7 +182,161 @@ temp2$cogdx.x <- as.factor(temp2$cogdx.x)
 #running monocle
 rownames(temp) <- NULL
 colnames(temp) <- NULL
+
+
 MonRun <- RunMonocleTobit(temp, temp2, C_by = 'Pseudotime',gene_short_name = gene_short_name)
+
+
+### jackknife
+set.seed(2)
+res <- vector('list',ncol(temp))
+corvec <- rep(0,ncol(temp))
+for (i in 1:ncol(temp)){
+  print(i)
+  #ind1<-sample(1:ncol(temp),ncol(temp),replace = T)
+  res[[i]] <- RunMonocleTobit(temp[,-i], temp2[-i,], C_by = 'Pseudotime',gene_short_name = gene_short_name)
+  corvec[i] <- abs(cor(MonRun$Pseudotime[-i],res[[i]]$Pseudotime,method='spearman'))
+  hist(corvec[1:i])
+}
+save(res,file='dlpfc_jacknifed_lineages.rda')
+
+load('dlpfc_jacknifed_lineages.rda')
+
+for(i in 1:ncol(temp)){
+  corvec[i] <- (cor(MonRun$Pseudotime[-i],res[[i]]$Pseudotime,method='spearman'))
+}
+
+cordf <- data.frame(cor=corvec,brainRegion='DLPFC',stringsAsFactors = F)
+cordf_combined <- data.table::fread('tcx_jacknifed_correlations.csv',data.table=F)
+cordf_combined <- rbind(cordf,cordf_combined)
+
+tiff(file='~/Desktop/jackknife_pseudotime.tiff',height=85,width=100,units='mm',res=300)
+g <- ggplot2::ggplot(cordf_combined,
+                     ggplot2::aes(cor,fill=brainRegion))
+g <- g + ggplot2::geom_density(adjust=.25,
+                               alpha=.7)
+g <- g + cowplot::theme_cowplot()
+g <- g+ ggplot2::labs(x='Spearman Correlation')
+g <- g + ggplot2::ggtitle('Jackknife pseudotime\ncorrelation distribution')
+g
+dev.off()
+
+
+
+
+set.seed(47)
+dlpfc_pca <- svd(scale(t(temp)))$u[,1:2]
+dlpfc_tsne <- tsne::tsne(scale(t(temp)))
+dlpfc_umap <- umap::umap(scale(t(temp)))
+
+dlpfc_dimred_df <- data.frame(Pseudotime=MonRun$Pseudotime,
+                       PCA1=dlpfc_pca[,1],
+                       PCA2=dlpfc_pca[,2],
+                       tSNE1=dlpfc_tsne[,1],
+                       tSNE2=dlpfc_tsne[,2],
+                       UMAP1=dlpfc_umap$layout[,1],
+                       UMAP2=dlpfc_umap$layout[,2],
+                       braak=MonRun$braaksc,
+                       cerad=MonRun$ceradsc,
+                       cogdx=MonRun$cogdxNew,
+                       stringsAsFactors=F)
+
+
+dlpfc_dimred_df$cogdx<- as.factor(dlpfc_dimred_df$cogdx)
+dlpfc_dimred_df$braak <- as.factor(dlpfc_dimred_df$braak)
+dlpfc_dimred_df$cerad <- as.factor(dlpfc_dimred_df$cerad)
+
+
+braakfit <- MASS::polr(braak ~ PCA1,dlpfc_dimred_df)
+ceradfit <- MASS::polr(cerad ~ PCA1,dlpfc_dimred_df)
+cogdxfit <- MASS::polr(cogdx ~ PCA1,dlpfc_dimred_df)
+
+cat('braak p-value: ',pt(abs(summary(braakfit)$coef[1,3]),braakfit$df.residual,lower.tail=F)*2,'\n')
+cat('cerad p-value: ',pt(abs(summary(ceradfit)$coef[1,3]),ceradfit$df.residual,lower.tail=F)*2,'\n')
+cat('cogdx p-value: ',pt(abs(summary(cogdxfit)$coef[1,3]),cogdxfit$df.residual,lower.tail=F)*2,'\n')
+
+tiff(file='~/Desktop/figure_dlpfc_pseudotime_pca1.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(dlpfc_dimred_df,
+                       x='Pseudotime',
+                       y='PCA1',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-0.2)
+g
+dev.off()
+
+
+
+
+
+
+
+
+tiff(file='~/Desktop/figure_dlpfc_pseudotime_pca2.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(dlpfc_dimred_df,
+                       x='Pseudotime',
+                       y='PCA2',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-0.2)
+g
+dev.off()
+
+tiff(file='~/Desktop/figure_dlpfc_pseudotime_tsne1.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(dlpfc_dimred_df,
+                       x='Pseudotime',
+                       y='tSNE1',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-30)
+g
+dev.off()
+
+tiff(file='~/Desktop/figure_dlpfc_pseudotime_tsne2.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(dlpfc_dimred_df,
+                       x='Pseudotime',
+                       y='tSNE2',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-20)
+g
+dev.off()
+
+
+tiff(file='~/Desktop/figure_dlpfc_pseudotime_umap1.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(dlpfc_dimred_df,
+                       x='Pseudotime',
+                       y='UMAP1',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-2.5)
+g
+dev.off()
+
+tiff(file='~/Desktop/figure_dlpfc_pseudotime_umap2.tiff',height=85,width=100,units='mm',res=300)
+g <- ggpubr::ggscatter(dlpfc_dimred_df,
+                       x='Pseudotime',
+                       y='UMAP2',
+                       add='reg.line',
+                       add.params = list(color='blue',fill='lightgray'),
+                       conf.int=TRUE)
+g <- g + ggpubr::stat_cor(method='pearson',label.x=0,label.y=-2.5)
+g
+dev.off()
+
+
+#e + geom_point
+#pca[1,2]
+#tsne[1,2]
+#umap[1,2]
+
+
+
 
 #tiff(filename='figure2A.tiff',height=85,width=85,units='mm',res=300)
 tiff(file='~/Desktop/MANUSCRIPT/figure2a.tiff',height=85,width=100,units='mm',res=300)
