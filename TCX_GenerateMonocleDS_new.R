@@ -282,8 +282,30 @@ foo <- foo[,-c(1:2)]
 rownames(foo) <- foo$col
 foo <- foo[,-c(1)]
 colnames(foo) <- c('State 4','State 5','State 6','State 1','State 3','State 2')
-tiff(file='~/Desktop/MANUSCRIPT/figure4b.tiff',height=85,width=100,units='mm',res=300)
-pheatmap::pheatmap(foo,show_rownames=F,color = viridis::viridis(100))
+
+respheat<-pheatmap::pheatmap(foo,show_rownames=F,color = viridis::viridis(100))
+geneClusters <- cutree(respheat$tree_row,h = 2.0)
+names(geneClusters) <- rownames(foo)
+
+dFun <- function(i,gca){
+  return(names(gca[gca==i]))
+}
+
+geneClList <- lapply(1:4,dFun,geneClusters)
+names(geneClList) <- paste0('Cluster',1:4)
+geneClDf2 <- utilityFunctions::list2df(geneClList)
+row.names(geneClDf2) <- geneClDf2$value
+colnames(geneClDf2)[1] <- 'Cluster'
+
+tiff(file='~/Desktop/figure4b.tiff',height=85,width=100,units='mm',res=300)
+pheatmap::pheatmap(foo,
+                   show_rownames=F,
+                   color = viridis::viridis(100),
+                   annotation_row = dplyr::select(geneClDf2,Cluster),
+                   annotation_colors=list(Cluster=c('Cluster1'=viridis::viridis(4)[1],
+                                                    'Cluster2'=viridis::viridis(4)[2],
+                                                    'Cluster3'=viridis::viridis(4)[3],
+                                                    'Cluster4'=viridis::viridis(4)[4])))
 dev.off()
 
 

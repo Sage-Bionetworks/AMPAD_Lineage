@@ -44,14 +44,60 @@ source('LineageFunctions.R')
 
 MonRun <- RunMonocleTobit((temp), temp2, C_by = 'Pseudotime',gene_short_name = keep_probes)
 MonRun$Dxn<- as.factor(MonRun$Dxn)
+MonRun$Dxn2 <- sapply(MonRun$Dxn,function(x) if(x==0){return('Control')}else{return('AD')})
+MonRun$Dxn2 <- as.factor(MonRun$Dxn2)
+MonRun$resistant<-!(MonRun$Pseudotime>140 & MonRun$Dxn==0)
+MonRun$resistant2<-sapply(MonRun$resistant,function(x) if(x==0){return('Resistant')}else{return('Not Resistant')})
+MonRun$resistant2 <- factor(MonRun$resistant2,levels=c('Resistant','Not Resistant'))
 MonRun$E4dose <- as.factor(MonRun$E4dose)
-g<- plot_cell_trajectory(MonRun,color_by = "Dxn",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
-g <- g + ggplot2::scale_color_viridis_d()
-g <- g + ggplot2::labs(color="Lineage\nState")
-g
 
-set.seed(1)
-pheatmap::pheatmap(temp[sample(1:nrow(temp),1000),order(MonRun$Pseudotime)],cluster_cols = F)
+tiff(file='~/Desktop/pseuodtime_mayoegwas.tiff',height=85,width=100,units='mm',res=300)
+g<- plot_cell_trajectory(MonRun,color_by = "Dxn2",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="Disease\nState")
+g
+dev.off()
+
+tiff(file='~/Desktop/pseuodtime_mayoegwas_resist.tiff',height=85,width=100,units='mm',res=300)
+g<- plot_cell_trajectory(MonRun,color_by = "resistant2",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="Resistant\nState")
+g
+dev.off()
+
+tiff(file='~/Desktop/pseuodtime_mayoegwas_apoe.tiff',height=85,width=100,units='mm',res=300)
+g<- plot_cell_trajectory(MonRun,color_by = "E4dose",show_branch_points=F,use_color_gradient = F,cell_size = 0.5)
+g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::labs(color="APOE E4\nDose")
+g
+dev.off()
+
+
+mrdf <- data.frame(Disease_State=MonRun$Dxn2,
+                   Pseudotime=MonRun$Pseudotime,
+                   Diagnosis=MonRun$Dxn,
+                   apoe=MonRun$E4dose)
+g <- ggplot2::ggplot(mrdf,ggplot2::aes(x=Disease_State,
+                                             y=Pseudotime,
+                                             color=Disease_State))
+g <- g + ggplot2::geom_boxplot()
+g <- g + ggplot2::geom_point(position=ggplot2::position_jitterdodge())
+#g <- g + ggplot2::scale_color_viridis_d()
+g <- g + ggplot2::scale_color_manual(values=viridis::viridis(3)[1:2])
+g <- g + ggplot2::xlab('Disease State')
+g <- g + ggplot2::labs(color="Disease\nState")
+
+tiff(file='~/Desktop/mayo_egwas_boxplot.tiff',height=85,width=100,units='mm',res=300)
+g
+dev.off()
+
+mrdf$Pseudotimescaled<- scale(mrdf$Pseudotime)
+summary(glm(Diagnosis ~ Pseudotimescaled,mrdf,family='binomial'))
+mrdf2 <- dplyr::filter(mrdf,apoe!=-9)
+mrdf2$apoe <- factor(mrdf2$apoe,levels=c('0','1','2'))
+res4<-(MASS::polr(apoe ~ Pseudotimescaled,mrdf2))
+cat('p-value: ',pt(abs(summary(res4)$coef[1,3]),181,lower.tail=F)*2,'\n')
+
 
 df1 <- data.frame(pt=MonRun$Pseudotime,dxn=MonRun$Dxn,stringsAsFactors=F)
 View(df1)
@@ -123,5 +169,21 @@ tiff(filename = '~/Desktop/upset_2.tiff', height = 6, width = 7,units='in',point
 UpSetR::upset(foo3,nsets = 6)
 dev.off()
 
-utilityFunctions::fisherWrapper(geneClList$upInMayoeGWASResistant,geneClList$Cluster3,intersect(mappingTab$external_gene_name,unlist(geneClList[-5])))
+utilityFunctions::fisherWrapper(geneClList$upInMayoeGWASResistant,geneClList$Cluster1,intersect(mappingTab$external_gene_name,unlist(geneClList[-c(5,6)])))
+
+utilityFunctions::fisherWrapper(geneClList$upInMayoeGWASResistant,geneClList$Cluster2,intersect(mappingTab$external_gene_name,unlist(geneClList[-c(5,6)])))
+
+utilityFunctions::fisherWrapper(geneClList$upInMayoeGWASResistant,geneClList$Cluster3,intersect(mappingTab$external_gene_name,unlist(geneClList[-c(5,6)])))
+
+utilityFunctions::fisherWrapper(geneClList$upInMayoeGWASResistant,geneClList$Cluster4,intersect(mappingTab$external_gene_name,unlist(geneClList[-c(5,6)])))
+
+utilityFunctions::fisherWrapper(geneClList$downInMayoeGWASResistant,geneClList$Cluster1,intersect(mappingTab$external_gene_name,unlist(geneClList[-c(5,6)])))
+
+utilityFunctions::fisherWrapper(geneClList$upInMayoeGWASResistant,geneClList$Cluster1,intersect(mappingTab$external_gene_name,unlist(geneClList[-c(5,6)])))
+
+utilityFunctions::fisherWrapper(geneClList$downInMayoeGWASResistant,geneClList$Cluster2,intersect(mappingTab$external_gene_name,unlist(geneClList[-c(5,6)])))
+
+utilityFunctions::fisherWrapper(geneClList$downInMayoeGWASResistant,geneClList$Cluster3,intersect(mappingTab$external_gene_name,unlist(geneClList[-c(5,6)])))
+
+utilityFunctions::fisherWrapper(geneClList$downInMayoeGWASResistant,geneClList$Cluster4,intersect(mappingTab$external_gene_name,unlist(geneClList[-c(5,6)])))
 
