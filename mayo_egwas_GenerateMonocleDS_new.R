@@ -101,8 +101,10 @@ cat('p-value: ',pt(abs(summary(res4)$coef[1,3]),181,lower.tail=F)*2,'\n')
 
 df1 <- data.frame(pt=MonRun$Pseudotime,dxn=MonRun$Dxn,stringsAsFactors=F)
 View(df1)
+ba<-ecdf(MonRun$Pseudotime)
 
-df1$resistant<-as.numeric(MonRun$Pseudotime>140 & MonRun$Dxn==0)
+
+df1$resistant<-as.numeric(MonRun$Pseudotime>quantile(ba,.8) & MonRun$Dxn==0)
 system.time(tvalues2 <- apply(DatExprAdj,2,function(x,y){utilityFunctions::fastlm(y,x)},df1$resistant))
 pvalues2 <- pt(abs(tvalues2),184,lower.tail=F)*2
 

@@ -212,11 +212,10 @@ cordf_combined <- rbind(cordf,cordf_combined)
 
 tiff(file='~/Desktop/jackknife_pseudotime.tiff',height=85,width=100,units='mm',res=300)
 g <- ggplot2::ggplot(cordf_combined,
-                     ggplot2::aes(cor,fill=brainRegion))
-g <- g + ggplot2::geom_density(adjust=.25,
-                               alpha=.7)
+                     ggplot2::aes(abs(cor),fill=brainRegion))
+g <- g + ggplot2::geom_density(adjust=2,alpha=.7)
 g <- g + cowplot::theme_cowplot()
-g <- g+ ggplot2::labs(x='Spearman Correlation')
+g <- g+ ggplot2::labs(x='|Spearman Correlation|')
 g <- g + ggplot2::ggtitle('Jackknife pseudotime\ncorrelation distribution')
 g
 dev.off()
