@@ -41,12 +41,12 @@ colnames(temp) <- NULL
 rownames(temp) <- NULL
 source('LineageFunctions.R')
 
-
+ba<-ecdf(MonRun$Pseudotime)
 MonRun <- RunMonocleTobit((temp), temp2, C_by = 'Pseudotime',gene_short_name = keep_probes)
 MonRun$Dxn<- as.factor(MonRun$Dxn)
 MonRun$Dxn2 <- sapply(MonRun$Dxn,function(x) if(x==0){return('Control')}else{return('AD')})
 MonRun$Dxn2 <- as.factor(MonRun$Dxn2)
-MonRun$resistant<-!(MonRun$Pseudotime>140 & MonRun$Dxn==0)
+MonRun$resistant<-!(MonRun$Pseudotime>quantile(ba,.8) & MonRun$Dxn==0)
 MonRun$resistant2<-sapply(MonRun$resistant,function(x) if(x==0){return('Resistant')}else{return('Not Resistant')})
 MonRun$resistant2 <- factor(MonRun$resistant2,levels=c('Resistant','Not Resistant'))
 MonRun$E4dose <- as.factor(MonRun$E4dose)

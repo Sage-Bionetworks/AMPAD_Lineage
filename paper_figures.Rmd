@@ -383,5 +383,19 @@ UpSetR::upset(foo3,nsets=15)
 dev.off()
 #foo4 <- dplyr::select(foo3,GeneID,TCXblue,IFGyellow,PHGyellow)
 #resu <- list()
+refGene <- synapser::synTableQuery('SELECT Distinct(external_gene_name) FROM syn11932957')$asDataFrame()
+
+utilityFunctions::fisherWrapper(dplyr::filter(foo2,summary=='DLPFC_6_Up')$gene_names,
+                                dplyr::filter(foo2,summary=='TCX_5_Up')$gene_names,
+                                refGene$`(external_gene_name)`)
+
+
+utilityFunctions::fisherWrapper(dplyr::filter(foo2,summary=='DLPFC_6_Up')$gene_names,
+                                dplyr::filter(foo2,summary=='TCX_4_Up')$gene_names,
+                                refGene$`(external_gene_name)`)
+
+utilityFunctions::fisherWrapper(dplyr::filter(foo2,summary=='DLPFC_6_Down')$gene_names,
+                                dplyr::filter(foo2,summary=='TCX_3_Down')$gene_names,
+                                refGene$`(external_gene_name)`)
 
 ```
